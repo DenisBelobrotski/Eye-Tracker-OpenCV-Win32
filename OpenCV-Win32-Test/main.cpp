@@ -1,8 +1,13 @@
 #include <iostream>
-#include "opencv2/objdetect.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/videoio.hpp"
+#include <fstream>
+#include <memory>
+#include <exception>
+#include <sstream>
+
+#include <opencv2/objdetect.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
 
 using namespace std;
 using namespace cv;
@@ -12,54 +17,106 @@ void detectAndDisplay(Mat frame);
 CascadeClassifier face_cascade;
 CascadeClassifier eyes_cascade;
 
+const string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
+const string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt.xml";
+const string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
+
+
+string getEnvironmentVariable(const string& variable)
+{
+	size_t bufferSize = 0;
+
+	getenv_s(&bufferSize, nullptr, 0, variable.c_str());
+
+	if (bufferSize <= 0)
+	{
+		throw runtime_error("Can't find environment variable: " + variable);
+	}
+
+	unique_ptr<char[]> buffer(new char[bufferSize]);
+	getenv_s(&bufferSize, buffer.get(), bufferSize, variable.c_str());
+	string result = move(buffer.get());
+
+	return move(result);
+}
+
+
+string readTextFile(const string& filePath)
+{
+	ifstream fin;
+	fin.open(filePath);
+
+	if (!fin.is_open())
+	{
+		throw runtime_error("Can't find file: " + filePath);
+	}
+
+	stringstream fileContentStream;
+	string fileLine;
+	while (getline(fin, fileLine))
+	{
+		fileContentStream << fileLine << endl;
+	}
+
+	fin.close();
+
+	return move(fileContentStream.str());
+}
+
+
 int main(int argc, const char** argv)
 {
-	CommandLineParser parser(argc, argv,
-		"{help h||}"
-		"{face_cascade|data/haarcascades/haarcascade_frontalface_alt.xml|Path to face cascade.}"
-		"{eyes_cascade|data/haarcascades/haarcascade_eye_tree_eyeglasses.xml|Path to eyes cascade.}"
-		"{camera|0|Camera device number.}");
-	parser.about("\nThis program demonstrates using the cv::CascadeClassifier class to detect objects (Face + eyes) in a video stream.\n"
-		"You can use Haar or LBP features.\n\n");
-	parser.printMessage();
-	String face_cascade_name = samples::findFile(parser.get<String>("face_cascade"));
-	String eyes_cascade_name = samples::findFile(parser.get<String>("eyes_cascade"));
-	//-- 1. Load the cascades
-	if (!face_cascade.load(face_cascade_name))
+	try
 	{
-		cout << "--(!)Error loading face cascade\n";
-		return -1;
-	};
-	if (!eyes_cascade.load(eyes_cascade_name))
-	{
-		cout << "--(!)Error loading eyes cascade\n";
-		return -1;
-	};
-	int camera_device = parser.get<int>("camera");
-	VideoCapture capture;
-	//-- 2. Read the video stream
-	capture.open(camera_device);
-	if (!capture.isOpened())
-	{
-		cout << "--(!)Error opening video capture\n";
-		return -1;
-	}
-	Mat frame;
-	while (capture.read(frame))
-	{
-		if (frame.empty())
+		string faceCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
+		string eyesCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
+
+		string faceCascadeFileContent = readTextFile(faceCascadePath);
+		string eyesCascadeFileContent = readTextFile(eyesCascadePath);
+
+		FileStorage faceCascadeFileStorage(faceCascadeFileContent, FileStorage::MEMORY);
+		FileStorage eyesCascadeFileStorage(eyesCascadeFileContent, FileStorage::MEMORY);
+
+		if (!face_cascade.read(faceCascadeFileStorage.getFirstTopLevelNode()))
 		{
-			cout << "--(!) No captured frame -- Break!\n";
-			break;
+			throw runtime_error("Can't read face cascade");
 		}
-		//-- 3. Apply the classifier to the frame
-		detectAndDisplay(frame);
-		if (waitKey(10) == 27)
+		if (!eyes_cascade.read(eyesCascadeFileStorage.getFirstTopLevelNode()))
 		{
-			break; // escape
+			throw runtime_error("Can't read eyes cascade");
+		}
+
+		//-- 2. Read the video stream
+		int cameraId = 0;
+		VideoCapture capture(cameraId);
+		if (!capture.isOpened())
+		{
+			throw runtime_error("Can't use camera with id: " + to_string(cameraId));
+		}
+
+		Mat frame;
+		while (capture.read(frame))
+		{
+			if (frame.empty())
+			{
+				cout << "--(!) No captured frame -- Break!\n";
+				break;
+			}
+			//-- 3. Apply the classifier to the frame
+			detectAndDisplay(frame);
+			if (waitKey(10) == 27)
+			{
+				break; // escape
+			}
 		}
 	}
-	return 0;
+	catch (const exception& e)
+	{
+		cout << e.what() << endl;
+		return EXIT_FAILURE;
+	}
+	
+	return EXIT_SUCCESS;
 }
 
 
