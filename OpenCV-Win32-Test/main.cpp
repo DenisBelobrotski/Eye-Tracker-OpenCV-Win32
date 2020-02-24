@@ -18,6 +18,49 @@ const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt.xml";
 const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
 
 
+std::string getEnvironmentVariable(const std::string& variable);
+std::string readTextFile(const std::string& filePath);
+cv::Mat readImage(const std::string& filePath);
+void ProcessFaceDetection(cv::Mat& sourceImage);
+void ProcessCameraImage();
+void ProcessTestFaceImage();
+
+
+int main(int argc, const char** argv)
+{
+	try
+	{
+		std::string faceCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
+		std::string eyesCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
+
+		std::string faceCascadeFileContent = readTextFile(faceCascadePath);
+		std::string eyesCascadeFileContent = readTextFile(eyesCascadePath);
+
+		cv::FileStorage faceFileStorage(faceCascadeFileContent, cv::FileStorage::MEMORY);
+		cv::FileStorage eyesFileStorage(eyesCascadeFileContent, cv::FileStorage::MEMORY);
+
+		if (!face_cascade.read(faceFileStorage.getFirstTopLevelNode()))
+		{
+			throw std::runtime_error("Can't read face cascade");
+		}
+		if (!eyes_cascade.read(eyesFileStorage.getFirstTopLevelNode()))
+		{
+			throw std::runtime_error("Can't read eyes cascade");
+		}
+
+		ProcessTestFaceImage();
+		ProcessCameraImage();
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		return EXIT_FAILURE;
+	}
+	
+	return EXIT_SUCCESS;
+}
+
+
 std::string getEnvironmentVariable(const std::string& variable)
 {
 	size_t bufferSize = 0;
@@ -37,7 +80,7 @@ std::string getEnvironmentVariable(const std::string& variable)
 }
 
 
-std::string readTextFile(const std::string& filePath)
+std::string readTextFile(const std::string & filePath)
 {
 	std::ifstream fin;
 	fin.open(filePath);
@@ -60,7 +103,7 @@ std::string readTextFile(const std::string& filePath)
 }
 
 
-cv::Mat readImage(const std::string& filePath)
+cv::Mat readImage(const std::string & filePath)
 {
 	cv::Mat image = cv::imread(filePath, cv::IMREAD_COLOR);
 
@@ -78,7 +121,7 @@ cv::Mat readImage(const std::string& filePath)
 }
 
 
-void ProcessFaceDetection(cv::Mat& sourceImage)
+void ProcessFaceDetection(cv::Mat & sourceImage)
 {
 	cv::Mat grayscaledImage;
 	cv::cvtColor(sourceImage, grayscaledImage, cv::COLOR_BGR2GRAY);
@@ -121,7 +164,7 @@ void ProcessCameraImage()
 		{
 			throw std::runtime_error("Can't read frames from camera with id: " + std::to_string(cameraId));
 		}
-		
+
 		ProcessFaceDetection(frame);
 		cv::imshow("Runtime face detection", frame);
 
@@ -144,39 +187,4 @@ void ProcessTestFaceImage()
 	cv::imshow("Test face detection", faceImage);
 
 	cv::waitKey(0);
-}
-
-
-int main(int argc, const char** argv)
-{
-	try
-	{
-		std::string faceCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
-		std::string eyesCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
-
-		std::string faceCascadeFileContent = readTextFile(faceCascadePath);
-		std::string eyesCascadeFileContent = readTextFile(eyesCascadePath);
-
-		cv::FileStorage faceFileStorage(faceCascadeFileContent, cv::FileStorage::MEMORY);
-		cv::FileStorage eyesFileStorage(eyesCascadeFileContent, cv::FileStorage::MEMORY);
-
-		if (!face_cascade.read(faceFileStorage.getFirstTopLevelNode()))
-		{
-			throw std::runtime_error("Can't read face cascade");
-		}
-		if (!eyes_cascade.read(eyesFileStorage.getFirstTopLevelNode()))
-		{
-			throw std::runtime_error("Can't read eyes cascade");
-		}
-
-		ProcessTestFaceImage();
-		ProcessCameraImage();
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
-	
-	return EXIT_SUCCESS;
 }
