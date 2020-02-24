@@ -9,20 +9,18 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
-using namespace std;
-using namespace cv;
 
-void detectAndDisplay(Mat frame);
+void detectAndDisplay(cv::Mat frame);
 
-CascadeClassifier face_cascade;
-CascadeClassifier eyes_cascade;
+cv::CascadeClassifier face_cascade;
+cv::CascadeClassifier eyes_cascade;
 
-const string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
-const string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt.xml";
-const string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
+const std::string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
+const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt.xml";
+const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
 
 
-string getEnvironmentVariable(const string& variable)
+std::string getEnvironmentVariable(const std::string& variable)
 {
 	size_t bufferSize = 0;
 
@@ -30,37 +28,37 @@ string getEnvironmentVariable(const string& variable)
 
 	if (bufferSize <= 0)
 	{
-		throw runtime_error("Can't find environment variable: " + variable);
+		throw std::runtime_error("Can't find environment variable: " + variable);
 	}
 
-	unique_ptr<char[]> buffer(new char[bufferSize]);
+	std::unique_ptr<char[]> buffer(new char[bufferSize]);
 	getenv_s(&bufferSize, buffer.get(), bufferSize, variable.c_str());
-	string result = move(buffer.get());
+	std::string result = std::move(buffer.get());
 
-	return move(result);
+	return std::move(result);
 }
 
 
-string readTextFile(const string& filePath)
+std::string readTextFile(const std::string& filePath)
 {
-	ifstream fin;
+	std::ifstream fin;
 	fin.open(filePath);
 
 	if (!fin.is_open())
 	{
-		throw runtime_error("Can't find file: " + filePath);
+		throw std::runtime_error("Can't find file: " + filePath);
 	}
 
-	stringstream fileContentStream;
-	string fileLine;
+	std::stringstream fileContentStream;
+	std::string fileLine;
 	while (getline(fin, fileLine))
 	{
-		fileContentStream << fileLine << endl;
+		fileContentStream << fileLine << std::endl;
 	}
 
 	fin.close();
 
-	return move(fileContentStream.str());
+	return std::move(fileContentStream.str());
 }
 
 
@@ -68,51 +66,51 @@ int main(int argc, const char** argv)
 {
 	try
 	{
-		string faceCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
-		string eyesCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
+		std::string faceCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
+		std::string eyesCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
 
-		string faceCascadeFileContent = readTextFile(faceCascadePath);
-		string eyesCascadeFileContent = readTextFile(eyesCascadePath);
+		std::string faceCascadeFileContent = readTextFile(faceCascadePath);
+		std::string eyesCascadeFileContent = readTextFile(eyesCascadePath);
 
-		FileStorage faceCascadeFileStorage(faceCascadeFileContent, FileStorage::MEMORY);
-		FileStorage eyesCascadeFileStorage(eyesCascadeFileContent, FileStorage::MEMORY);
+		cv::FileStorage faceFileStorage(faceCascadeFileContent, cv::FileStorage::MEMORY);
+		cv::FileStorage eyesFileStorage(eyesCascadeFileContent, cv::FileStorage::MEMORY);
 
-		if (!face_cascade.read(faceCascadeFileStorage.getFirstTopLevelNode()))
+		if (!face_cascade.read(faceFileStorage.getFirstTopLevelNode()))
 		{
-			throw runtime_error("Can't read face cascade");
+			throw std::runtime_error("Can't read face cascade");
 		}
-		if (!eyes_cascade.read(eyesCascadeFileStorage.getFirstTopLevelNode()))
+		if (!eyes_cascade.read(eyesFileStorage.getFirstTopLevelNode()))
 		{
-			throw runtime_error("Can't read eyes cascade");
+			throw std::runtime_error("Can't read eyes cascade");
 		}
 
 		//-- 2. Read the video stream
 		int cameraId = 0;
-		VideoCapture capture(cameraId);
+		cv::VideoCapture capture(cameraId);
 		if (!capture.isOpened())
 		{
-			throw runtime_error("Can't use camera with id: " + to_string(cameraId));
+			throw std::runtime_error("Can't use camera with id: " + std::to_string(cameraId));
 		}
 
-		Mat frame;
+		cv::Mat frame;
 		while (capture.read(frame))
 		{
 			if (frame.empty())
 			{
-				cout << "--(!) No captured frame -- Break!\n";
+				std::cout << "--(!) No captured frame -- Break!\n";
 				break;
 			}
 			//-- 3. Apply the classifier to the frame
 			detectAndDisplay(frame);
-			if (waitKey(10) == 27)
+			if (cv::waitKey(10) == 27)
 			{
 				break; // escape
 			}
 		}
 	}
-	catch (const exception& e)
+	catch (const std::exception& e)
 	{
-		cout << e.what() << endl;
+		std::cout << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 	
@@ -120,27 +118,27 @@ int main(int argc, const char** argv)
 }
 
 
-void detectAndDisplay(Mat frame)
+void detectAndDisplay(cv::Mat frame)
 {
-	Mat frame_gray;
-	cvtColor(frame, frame_gray, COLOR_BGR2GRAY);
+	cv::Mat frame_gray;
+	cv::cvtColor(frame, frame_gray, cv::COLOR_BGR2GRAY);
 	equalizeHist(frame_gray, frame_gray);
 	//-- Detect faces
-	std::vector<Rect> faces;
+	std::vector<cv::Rect> faces;
 	face_cascade.detectMultiScale(frame_gray, faces);
 	for (size_t i = 0; i < faces.size(); i++)
 	{
-		Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-		ellipse(frame, center, Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, Scalar(255, 0, 255), 4);
-		Mat faceROI = frame_gray(faces[i]);
+		cv::Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
+		ellipse(frame, center, cv::Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, cv::Scalar(255, 0, 255), 4);
+		cv::Mat faceROI = frame_gray(faces[i]);
 		//-- In each face, detect eyes
-		std::vector<Rect> eyes;
+		std::vector<cv::Rect> eyes;
 		eyes_cascade.detectMultiScale(faceROI, eyes);
 		for (size_t j = 0; j < eyes.size(); j++)
 		{
-			Point eye_center(faces[i].x + eyes[j].x + eyes[j].width / 2, faces[i].y + eyes[j].y + eyes[j].height / 2);
+			cv::Point eye_center(faces[i].x + eyes[j].x + eyes[j].width / 2, faces[i].y + eyes[j].y + eyes[j].height / 2);
 			int radius = cvRound((eyes[j].width + eyes[j].height) * 0.25);
-			circle(frame, eye_center, radius, Scalar(255, 0, 0), 4);
+			circle(frame, eye_center, radius, cv::Scalar(255, 0, 0), 4);
 		}
 	}
 	//-- Show what you got
