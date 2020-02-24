@@ -10,12 +10,14 @@
 #include <opencv2/videoio.hpp>
 
 
-cv::CascadeClassifier face_cascade;
-cv::CascadeClassifier eyes_cascade;
-
+const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
 const std::string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
 const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt.xml";
 const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
+
+
+cv::CascadeClassifier face_cascade;
+cv::CascadeClassifier eyes_cascade;
 
 
 std::string getEnvironmentVariable(const std::string& variable);
@@ -30,8 +32,8 @@ int main(int argc, const char** argv)
 {
 	try
 	{
-		std::string faceCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
-		std::string eyesCascadePath = getEnvironmentVariable("OPENCV_DIR") + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
+		std::string faceCascadePath = getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
+		std::string eyesCascadePath = getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
 
 		std::string faceCascadeFileContent = readTextFile(faceCascadePath);
 		std::string eyesCascadeFileContent = readTextFile(eyesCascadePath);
