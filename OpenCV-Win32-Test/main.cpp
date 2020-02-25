@@ -9,8 +9,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
-#include <stb_image.h>
-
 
 const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
 const std::string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
@@ -25,9 +23,11 @@ cv::CascadeClassifier eyes_cascade;
 std::string getEnvironmentVariable(const std::string& variable);
 std::string readTextFile(const std::string& filePath);
 cv::Mat readImage(const std::string& filePath);
-void ProcessFaceDetection(cv::Mat& sourceImage);
-void ProcessCameraImage();
-void ProcessTestFaceImage();
+cv::Mat readImageAsBinary(const std::string& filePath);
+cv::Mat readImageAsBinaryStream(const std::string& filePath);
+void processFaceDetection(cv::Mat& sourceImage);
+void processCameraImage();
+void processTestFaceImage();
 
 
 int main(int argc, const char** argv)
@@ -52,8 +52,8 @@ int main(int argc, const char** argv)
 			throw std::runtime_error("Can't read eyes cascade");
 		}
 
-		ProcessTestFaceImage();
-		ProcessCameraImage();
+		processTestFaceImage();
+		processCameraImage();
 	}
 	catch (const std::exception& e)
 	{
@@ -113,19 +113,46 @@ cv::Mat readImage(const std::string & filePath)
 
 	if (image.empty())
 	{
-		throw std::runtime_error("Can't read image.");
+		throw std::runtime_error("Can't read image: " + filePath);
 	}
 
 	if (image.data == nullptr)
 	{
-		throw std::runtime_error("Bad image data.");
+		throw std::runtime_error("Bad image data: " + filePath);
 	}
 
 	return image;
 }
 
 
-void ProcessFaceDetection(cv::Mat & sourceImage)
+cv::Mat readImageAsBinary(const std::string& filePath)
+{
+	std::ifstream in(filePath, std::ios::in | std::ios::binary);
+
+	in.seekg(0, std::ios::end);
+	auto fileSize = in.tellg();
+	in.seekg(0, std::ios::beg);
+
+	std::unique_ptr<char[]> fileBuffer(new char[fileSize]);
+	if (!in.read(fileBuffer.get(), fileSize))
+	{
+		throw std::runtime_error("Can't read file: " + filePath);
+	}
+
+	std::vector<char> data(fileBuffer.get(), fileBuffer.get() + fileSize);
+	return cv::imdecode(cv::Mat(data), cv::IMREAD_COLOR);
+}
+
+
+cv::Mat readImageAsBinaryStream(const std::string& filePath)
+{
+	std::ifstream in(filePath, std::ios::in | std::ios::binary);
+	std::vector<char> fileBuffer((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	return cv::imdecode(cv::Mat(fileBuffer), cv::IMREAD_COLOR);
+}
+
+
+void processFaceDetection(cv::Mat & sourceImage)
 {
 	cv::Mat grayscaledImage;
 	cv::cvtColor(sourceImage, grayscaledImage, cv::COLOR_BGR2GRAY);
@@ -152,7 +179,7 @@ void ProcessFaceDetection(cv::Mat & sourceImage)
 }
 
 
-void ProcessCameraImage()
+void processCameraImage()
 {
 	int cameraId = 0;
 	cv::VideoCapture capture(cameraId);
@@ -169,7 +196,7 @@ void ProcessCameraImage()
 			throw std::runtime_error("Can't read frames from camera with id: " + std::to_string(cameraId));
 		}
 
-		ProcessFaceDetection(frame);
+		processFaceDetection(frame);
 		cv::imshow("Runtime face detection", frame);
 
 		if (cv::waitKey(16.6) == 27)
@@ -180,14 +207,16 @@ void ProcessCameraImage()
 }
 
 
-void ProcessTestFaceImage()
+void processTestFaceImage()
 {
 	const std::string testImageFilePath = "face-small.jpg";
 
-	cv::Mat faceImage = readImage(testImageFilePath);
+	//cv::Mat faceImage = readImage(testImageFilePath);
+	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
+	//cv::Mat faceImage = readImageAsBinaryStream(testImageFilePath);
 
 	cv::imshow("Face image", faceImage);
-	ProcessFaceDetection(faceImage);
+	processFaceDetection(faceImage);
 	cv::imshow("Test face detection", faceImage);
 
 	cv::waitKey(0);
