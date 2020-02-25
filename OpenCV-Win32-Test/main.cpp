@@ -9,9 +9,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 
 const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
 const std::string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
@@ -26,10 +23,11 @@ cv::CascadeClassifier eyes_cascade;
 std::string getEnvironmentVariable(const std::string& variable);
 std::string readTextFile(const std::string& filePath);
 cv::Mat readImage(const std::string& filePath);
+cv::Mat readImageAsBinary(const std::string& filePath);
+cv::Mat readImageAsBinaryStream(const std::string& filePath);
 void processFaceDetection(cv::Mat& sourceImage);
 void processCameraImage();
 void processTestFaceImage();
-cv::Mat stbiReadImage(const std::string& filePath);
 
 
 int main(int argc, const char** argv)
@@ -127,6 +125,33 @@ cv::Mat readImage(const std::string & filePath)
 }
 
 
+cv::Mat readImageAsBinary(const std::string& filePath)
+{
+	std::ifstream in(filePath, std::ios::in | std::ios::binary);
+
+	in.seekg(0, std::ios::end);
+	auto fileSize = in.tellg();
+	in.seekg(0, std::ios::beg);
+
+	std::unique_ptr<char[]> fileBuffer(new char[fileSize]);
+	if (!in.read(fileBuffer.get(), fileSize))
+	{
+		throw std::runtime_error("Can't read file: " + filePath);
+	}
+
+	std::vector<char> data(fileBuffer.get(), fileBuffer.get() + fileSize);
+	return cv::imdecode(cv::Mat(data), cv::IMREAD_COLOR);
+}
+
+
+cv::Mat readImageAsBinaryStream(const std::string& filePath)
+{
+	std::ifstream in(filePath, std::ios::in | std::ios::binary);
+	std::vector<char> fileBuffer((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	return cv::imdecode(cv::Mat(fileBuffer), cv::IMREAD_COLOR);
+}
+
+
 void processFaceDetection(cv::Mat & sourceImage)
 {
 	cv::Mat grayscaledImage;
@@ -187,41 +212,12 @@ void processTestFaceImage()
 	const std::string testImageFilePath = "face-small.jpg";
 
 	//cv::Mat faceImage = readImage(testImageFilePath);
-	cv::Mat faceImage = stbiReadImage(testImageFilePath);
+	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
+	//cv::Mat faceImage = readImageAsBinaryStream(testImageFilePath);
 
 	cv::imshow("Face image", faceImage);
 	processFaceDetection(faceImage);
 	cv::imshow("Test face detection", faceImage);
 
 	cv::waitKey(0);
-}
-
-
-cv::Mat stbiReadImage(const std::string& filePath)
-{
-	std::ifstream in(filePath, std::ios::in | std::ios::binary);
-
-	in.seekg(0, std::ios::end);
-	auto fileSize = in.tellg();
-	in.seekg(0, std::ios::beg);
-
-	std::cout << "File size " << fileSize << std::endl;
-
-	std::unique_ptr<char[]> fileBuffer(new char[fileSize]);
-	if (!in.read(fileBuffer.get(), fileSize))
-	{
-		throw std::runtime_error("Can't read file: " + filePath);
-	}
-
-	int width, height, channels;
-	stbi_set_flip_vertically_on_load(true);
-	const char* constBuffer = fileBuffer.get();
-	auto* constUnsignedBuffer = reinterpret_cast<const unsigned char*>(constBuffer);	
-	std::unique_ptr<unsigned char[]> imageData(stbi_load_from_memory(constUnsignedBuffer, fileSize, &width, &height, &channels, 0));
-	if (!imageData)
-	{
-		throw std::runtime_error("Can't parse image: " + filePath);
-	}
-
-	return cv::Mat(width, height, CV_8UC3, imageData.get());
 }
