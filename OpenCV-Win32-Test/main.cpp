@@ -9,6 +9,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/videoio.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 
@@ -25,9 +26,10 @@ cv::CascadeClassifier eyes_cascade;
 std::string getEnvironmentVariable(const std::string& variable);
 std::string readTextFile(const std::string& filePath);
 cv::Mat readImage(const std::string& filePath);
-void ProcessFaceDetection(cv::Mat& sourceImage);
-void ProcessCameraImage();
-void ProcessTestFaceImage();
+void processFaceDetection(cv::Mat& sourceImage);
+void processCameraImage();
+void processTestFaceImage();
+cv::Mat stbiReadImage(const std::string& filePath);
 
 
 int main(int argc, const char** argv)
@@ -52,8 +54,8 @@ int main(int argc, const char** argv)
 			throw std::runtime_error("Can't read eyes cascade");
 		}
 
-		ProcessTestFaceImage();
-		ProcessCameraImage();
+		processTestFaceImage();
+		processCameraImage();
 	}
 	catch (const std::exception& e)
 	{
@@ -113,19 +115,19 @@ cv::Mat readImage(const std::string & filePath)
 
 	if (image.empty())
 	{
-		throw std::runtime_error("Can't read image.");
+		throw std::runtime_error("Can't read image: " + filePath);
 	}
 
 	if (image.data == nullptr)
 	{
-		throw std::runtime_error("Bad image data.");
+		throw std::runtime_error("Bad image data: " + filePath);
 	}
 
 	return image;
 }
 
 
-void ProcessFaceDetection(cv::Mat & sourceImage)
+void processFaceDetection(cv::Mat & sourceImage)
 {
 	cv::Mat grayscaledImage;
 	cv::cvtColor(sourceImage, grayscaledImage, cv::COLOR_BGR2GRAY);
@@ -152,7 +154,7 @@ void ProcessFaceDetection(cv::Mat & sourceImage)
 }
 
 
-void ProcessCameraImage()
+void processCameraImage()
 {
 	int cameraId = 0;
 	cv::VideoCapture capture(cameraId);
@@ -169,7 +171,7 @@ void ProcessCameraImage()
 			throw std::runtime_error("Can't read frames from camera with id: " + std::to_string(cameraId));
 		}
 
-		ProcessFaceDetection(frame);
+		processFaceDetection(frame);
 		cv::imshow("Runtime face detection", frame);
 
 		if (cv::waitKey(16.6) == 27)
@@ -180,15 +182,46 @@ void ProcessCameraImage()
 }
 
 
-void ProcessTestFaceImage()
+void processTestFaceImage()
 {
 	const std::string testImageFilePath = "face-small.jpg";
 
-	cv::Mat faceImage = readImage(testImageFilePath);
+	//cv::Mat faceImage = readImage(testImageFilePath);
+	cv::Mat faceImage = stbiReadImage(testImageFilePath);
 
 	cv::imshow("Face image", faceImage);
-	ProcessFaceDetection(faceImage);
+	processFaceDetection(faceImage);
 	cv::imshow("Test face detection", faceImage);
 
 	cv::waitKey(0);
+}
+
+
+cv::Mat stbiReadImage(const std::string& filePath)
+{
+	std::ifstream in(filePath, std::ios::in | std::ios::binary);
+
+	in.seekg(0, std::ios::end);
+	auto fileSize = in.tellg();
+	in.seekg(0, std::ios::beg);
+
+	std::cout << "File size " << fileSize << std::endl;
+
+	std::unique_ptr<char[]> fileBuffer(new char[fileSize]);
+	if (!in.read(fileBuffer.get(), fileSize))
+	{
+		throw std::runtime_error("Can't read file: " + filePath);
+	}
+
+	int width, height, channels;
+	stbi_set_flip_vertically_on_load(true);
+	const char* constBuffer = fileBuffer.get();
+	auto* constUnsignedBuffer = reinterpret_cast<const unsigned char*>(constBuffer);	
+	std::unique_ptr<unsigned char[]> imageData(stbi_load_from_memory(constUnsignedBuffer, fileSize, &width, &height, &channels, 0));
+	if (!imageData)
+	{
+		throw std::runtime_error("Can't parse image: " + filePath);
+	}
+
+	return cv::Mat(width, height, CV_8UC3, imageData.get());
 }
