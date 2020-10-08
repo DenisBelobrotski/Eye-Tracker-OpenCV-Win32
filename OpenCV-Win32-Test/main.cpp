@@ -11,8 +11,8 @@
 
 
 const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
-const std::string HAAR_CASCADES_RELATIVE_PATH = "\\..\\..\\etc\\haarcascades";
-const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt.xml";
+const std::string HAAR_CASCADES_RELATIVE_PATH = "\\build\\etc\\haarcascades";
+const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt2.xml";
 const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
 
 
@@ -53,7 +53,7 @@ int main(int argc, const char** argv)
 		}
 
 		processTestFaceImage();
-		processCameraImage();
+		//processCameraImage();
 	}
 	catch (const std::exception& e)
 	{
