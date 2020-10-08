@@ -154,26 +154,45 @@ cv::Mat readImageAsBinaryStream(const std::string& filePath)
 
 void processFaceDetection(cv::Mat & sourceImage)
 {
-	cv::Mat grayscaledImage;
-	cv::cvtColor(sourceImage, grayscaledImage, cv::COLOR_BGR2GRAY);
-	cv::equalizeHist(grayscaledImage, grayscaledImage);
+	cv::Mat processingImage;
+	cv::cvtColor(sourceImage, processingImage, cv::COLOR_BGR2GRAY);
+	cv::equalizeHist(processingImage, processingImage);
 
-	std::vector<cv::Rect> faces;
-	face_cascade.detectMultiScale(grayscaledImage, faces);
+	std::vector<cv::Rect> faceRects;
+	face_cascade.detectMultiScale(processingImage, faceRects);
 
-	for (size_t i = 0; i < faces.size(); i++)
+	std::stringstream windowNameStringStream;
+
+	for (size_t faceIndex = 0; faceIndex < faceRects.size(); faceIndex++)
 	{
-		cv::Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
-		cv::ellipse(sourceImage, center, cv::Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, cv::Scalar(255, 0, 255), 4);
+		//cv::Point center(faces[i].x + faces[i].width / 2, faces[i].y + faces[i].height / 2);
+		//cv::ellipse(sourceImage, center, cv::Size(faces[i].width / 2, faces[i].height / 2), 0, 0, 360, cv::Scalar(255, 0, 255), 4);
 
-		cv::Mat faceSubimage = grayscaledImage(faces[i]);
-		std::vector<cv::Rect> eyes;
-		eyes_cascade.detectMultiScale(faceSubimage, eyes);
-		for (size_t j = 0; j < eyes.size(); j++)
+		cv::Rect faceRect = faceRects[faceIndex];
+		cv::Mat faceRoi = processingImage(faceRect);
+
+		windowNameStringStream << "Face " << faceIndex;
+		cv::imshow(windowNameStringStream.str(), faceRoi);
+		windowNameStringStream.clear();
+
+		std::vector<cv::Rect> eyeRects;
+		eyes_cascade.detectMultiScale(faceRoi, eyeRects);
+		for (size_t eyeIndex = 0; eyeIndex < eyeRects.size(); eyeIndex++)
 		{
-			cv::Point eye_center(faces[i].x + eyes[j].x + eyes[j].width / 2, faces[i].y + eyes[j].y + eyes[j].height / 2);
-			int radius = cvRound((eyes[j].width + eyes[j].height) * 0.25f);
-			cv::circle(sourceImage, eye_center, radius, cv::Scalar(255, 0, 0), 4);
+			//cv::Point eye_center(faces[i].x + eyes[j].x + eyes[j].width / 2, faces[i].y + eyes[j].y + eyes[j].height / 2);
+			//int radius = cvRound((eyes[j].width + eyes[j].height) * 0.25f);
+			//cv::circle(sourceImage, eye_center, radius, cv::Scalar(255, 0, 0), 4);
+			cv::Rect eyeRect = eyeRects[eyeIndex];
+			cv::Mat eyeRoi = faceRoi(eyeRect);
+
+			windowNameStringStream << "Eye " << eyeIndex << " of face " << faceIndex;
+			std::string windowName = windowNameStringStream.str();
+			windowNameStringStream.clear();
+
+			cv::imshow(windowName, eyeRoi);
+			int x = 100 + (int)eyeIndex * 100;
+			int y = 100 + (int)eyeIndex * 100;
+			cv::moveWindow(windowName, x, y);
 		}
 	}
 }
@@ -215,9 +234,9 @@ void processTestFaceImage()
 	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
 	//cv::Mat faceImage = readImageAsBinaryStream(testImageFilePath);
 
-	cv::imshow("Face image", faceImage);
+	//cv::imshow("Face image", faceImage);
 	processFaceDetection(faceImage);
-	cv::imshow("Test face detection", faceImage);
+	//cv::imshow("Test face detection", faceImage);
 
 	cv::waitKey(0);
 }
