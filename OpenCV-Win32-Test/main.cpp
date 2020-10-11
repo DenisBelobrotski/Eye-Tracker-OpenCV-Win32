@@ -16,6 +16,7 @@ const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
 const std::string HAAR_CASCADES_RELATIVE_PATH = "\\build\\etc\\haarcascades";
 const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt2.xml";
 const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
+// const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
 
 
 cv::CascadeClassifier face_cascade;
@@ -283,14 +284,28 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 	cv::Mat coloredImage;
 	cv::cvtColor(processingImage, coloredImage, cv::COLOR_GRAY2BGR);
 	cv::drawContours(coloredImage, contours, -1, CV_RGB(255, 0, 0));
-	/*for (size_t contourIndex = 0; contourIndex < contours.size(); contourIndex++)
+	for (size_t contourIndex = 0; contourIndex < contours.size(); contourIndex++)
 	{
 		std::vector<cv::Point> contour = contours[contourIndex];
+
 		cv::Point2f center;
 		float radius;
 		cv::minEnclosingCircle(contour, center, radius);
-		cv::circle(coloredImage, center, radius, CV_RGB(255, 0, 0));
-	}*/
+		cv::circle(coloredImage, center, radius, CV_RGB(0, 255, 0));
+
+		cv::Rect boundingRect = cv::boundingRect(contour);
+		cv::rectangle(coloredImage, boundingRect, CV_RGB(0, 0, 255));
+
+		int eyeArea = processingImage.cols * processingImage.rows;
+		int pupilRectArea = boundingRect.area();
+
+		std::cout 
+			<< "eye index: " << eyeIndex 
+			<< ", pupil index " << contourIndex 
+			<< ", eye area: " << eyeArea 
+			<< ", pupil rect area: " << pupilRectArea 
+			<< std::endl;
+	}
 
 	//start contours
 	windowNameStringStream << "Pupil " << eyeIndex << " contours";
@@ -299,6 +314,22 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 	windowNameStringStream.str("");
 	//end contours
+}
+
+
+void processTestFaceImage()
+{
+	const std::string testImageFilePath = "dataset_1/eyes_center.jpg";
+
+	//cv::Mat faceImage = readImage(testImageFilePath);
+	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
+	//cv::Mat faceImage = readImageAsBinaryStream(testImageFilePath);
+
+	//cv::imshow("Face image", faceImage);
+	processFaceDetection(faceImage);
+	//cv::imshow("Test face detection", faceImage);
+
+	cv::waitKey(0);
 }
 
 
@@ -328,20 +359,4 @@ void processCameraImage()
 			break; // escape
 		}
 	}
-}
-
-
-void processTestFaceImage()
-{
-	const std::string testImageFilePath = "face_0.jpg";
-
-	//cv::Mat faceImage = readImage(testImageFilePath);
-	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
-	//cv::Mat faceImage = readImageAsBinaryStream(testImageFilePath);
-
-	//cv::imshow("Face image", faceImage);
-	processFaceDetection(faceImage);
-	//cv::imshow("Test face detection", faceImage);
-
-	cv::waitKey(0);
 }
