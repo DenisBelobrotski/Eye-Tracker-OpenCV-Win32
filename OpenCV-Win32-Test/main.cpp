@@ -283,7 +283,7 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 	cv::findContours(processingImage, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 	cv::Mat coloredImage;
 	cv::cvtColor(processingImage, coloredImage, cv::COLOR_GRAY2BGR);
-	cv::drawContours(coloredImage, contours, -1, CV_RGB(255, 0, 0));
+	//cv::drawContours(coloredImage, contours, -1, CV_RGB(255, 0, 0));
 	for (size_t contourIndex = 0; contourIndex < contours.size(); contourIndex++)
 	{
 		std::vector<cv::Point> contour = contours[contourIndex];
@@ -291,13 +291,23 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 		cv::Point2f center;
 		float radius;
 		cv::minEnclosingCircle(contour, center, radius);
-		cv::circle(coloredImage, center, radius, CV_RGB(0, 255, 0));
 
 		cv::Rect boundingRect = cv::boundingRect(contour);
-		cv::rectangle(coloredImage, boundingRect, CV_RGB(0, 0, 255));
 
 		int eyeArea = processingImage.cols * processingImage.rows;
 		int pupilRectArea = boundingRect.area();
+
+		float boundingRectRatio = (float)pupilRectArea / eyeArea;
+
+		bool isValidPupil = 0.01f <= boundingRectRatio && boundingRectRatio <= 0.05f;
+
+		if (!isValidPupil)
+		{
+			continue;
+		}
+
+		cv::circle(coloredImage, center, radius, CV_RGB(0, 255, 0));
+		cv::rectangle(coloredImage, boundingRect, CV_RGB(0, 0, 255));
 
 		std::cout 
 			<< "eye index: " << eyeIndex 
