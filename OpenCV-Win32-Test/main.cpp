@@ -15,8 +15,15 @@
 const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
 const std::string HAAR_CASCADES_RELATIVE_PATH = "\\build\\etc\\haarcascades";
 const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt2.xml";
-const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
-// const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
+//const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
+const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
+const std::string TEST_DATASET_NAME = "dataset_2";
+const std::string TEST_IMAGE_NAME = "eyes_center";
+const std::string TEST_IMAGE_EXTENSION = "png";
+const bool IS_VIDEO_MODE = true;
+const bool IS_DRAWING = true;
+const bool IS_LOGGING = true;
+const int THRESHOLD = 5;
 
 
 cv::CascadeClassifier face_cascade;
@@ -28,18 +35,20 @@ std::string readTextFile(const std::string& filePath);
 cv::Mat readImage(const std::string& filePath);
 cv::Mat readImageAsBinary(const std::string& filePath);
 cv::Mat readImageAsBinaryStream(const std::string& filePath);
-void processFaceDetection(cv::Mat& sourceImage);
+void processFaceDetection(cv::Mat& sourceImage, bool debug = false);
 void processCameraImage();
 void processTestFaceImage();
-void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex);
+void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect>& pupils, int eyeIndex, bool debug = false);
 
 
 int main(int argc, const char** argv)
 {
 	try
 	{
-		std::string faceCascadePath = getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
-		std::string eyesCascadePath = getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
+		std::string faceCascadePath = 
+			getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
+		std::string eyesCascadePath = 
+			getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + EYES_CASCADE_FILE_NAME;
 
 		std::string faceCascadeFileContent = readTextFile(faceCascadePath);
 		std::string eyesCascadeFileContent = readTextFile(eyesCascadePath);
@@ -56,8 +65,14 @@ int main(int argc, const char** argv)
 			throw std::runtime_error("Can't read eyes cascade");
 		}
 
-		processTestFaceImage();
-		//processCameraImage();
+		if (IS_VIDEO_MODE)
+		{
+			processCameraImage();
+		}
+		else
+		{
+			processTestFaceImage();
+		}
 	}
 	catch (const std::exception& e)
 	{
@@ -133,6 +148,11 @@ cv::Mat readImageAsBinary(const std::string& filePath)
 {
 	std::ifstream in(filePath, std::ios::in | std::ios::binary);
 
+	if (!in.good())
+	{
+		throw std::runtime_error("Bad file " + filePath);
+	}
+
 	in.seekg(0, std::ios::end);
 	auto fileSize = in.tellg();
 	in.seekg(0, std::ios::beg);
@@ -156,14 +176,19 @@ cv::Mat readImageAsBinaryStream(const std::string& filePath)
 }
 
 
-void processFaceDetection(cv::Mat & sourceImage)
+void processFaceDetection(cv::Mat & sourceImage, bool debug)
 {
+	int facesCount = 0;
+	int eyesCount = 0;
+	int pupilsCount = 0;
+
 	cv::Mat processingImage;
 	cv::cvtColor(sourceImage, processingImage, cv::COLOR_BGR2GRAY);
 	cv::equalizeHist(processingImage, processingImage);
 
 	std::vector<cv::Rect> faceRects;
 	face_cascade.detectMultiScale(processingImage, faceRects, 1.3, 5);
+	facesCount += faceRects.size();
 
 	std::stringstream windowNameStringStream;
 
@@ -171,16 +196,27 @@ void processFaceDetection(cv::Mat & sourceImage)
 	{
 		cv::Rect faceRect = faceRects[faceIndex];
 		cv::Mat faceRoi = processingImage(faceRect);
+		cv::Mat originalFaceRoi = sourceImage(faceRect);
 
-		windowNameStringStream << "Face " << faceIndex;
-		std::string faceWindowName = windowNameStringStream.str();
-		cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
-		cv::imshow(faceWindowName, faceRoi);
-		cv::resizeWindow(faceWindowName, faceRect.size() / 2);
-		windowNameStringStream.str("");
+		if (IS_DRAWING)
+		{
+			cv::rectangle(sourceImage, faceRect, CV_RGB(255, 0, 0), 10);
+		}
+
+		if (debug)
+		{
+			windowNameStringStream << "Face " << faceIndex;
+			std::string faceWindowName = windowNameStringStream.str();
+			cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+			cv::imshow(faceWindowName, faceRoi);
+			cv::resizeWindow(faceWindowName, faceRect.size() / 2);
+			windowNameStringStream.str("");
+		}
 
 		std::vector<cv::Rect> eyeRects;
 		eyes_cascade.detectMultiScale(faceRoi, eyeRects, 1.3, 5);
+		eyesCount += eyeRects.size();
+
 		for (size_t eyeIndex = 0; eyeIndex < eyeRects.size(); eyeIndex++)
 		{
 			cv::Rect eyeRect = eyeRects[eyeIndex];
@@ -193,30 +229,49 @@ void processFaceDetection(cv::Mat & sourceImage)
 			}
 
 			cv::Mat eyeRoi = faceRoi(eyeRect);
+			cv::Mat originalEyeRoi = originalFaceRoi(eyeRect);
+
+			if (IS_DRAWING)
+			{
+				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), 10);
+			}
 
 			std::vector<cv::Rect> pupilRects;
-			detectPupil(eyeRoi, pupilRects, eyeIndex);
+			detectPupil(eyeRoi, pupilRects, eyeIndex, debug);
+			pupilsCount += pupilRects.size();
 
 			for (size_t pupilIndex = 0; pupilIndex < pupilRects.size(); pupilIndex++)
 			{
 				cv::Rect pupilRect = pupilRects[pupilIndex];
-				cv::rectangle(eyeRoi, pupilRect, CV_RGB(255, 0, 0), 10);
+
+				if (IS_DRAWING)
+				{
+					cv::rectangle(originalEyeRoi, pupilRect, CV_RGB(0, 0, 255), 10);
+				}
 			}
 
-			windowNameStringStream << "Eye " << eyeIndex << " of face " << faceIndex;
-			std::string eyeWindowName = windowNameStringStream.str();
-			windowNameStringStream.str("");
+			if (debug)
+			{
+				windowNameStringStream << "Eye " << eyeIndex << " of face " << faceIndex;
+				std::string eyeWindowName = windowNameStringStream.str();
+				windowNameStringStream.str("");
 
-			cv::imshow(eyeWindowName, eyeRoi);
-			int x = 100 + (int)eyeIndex * 100;
-			int y = 100 + (int)eyeIndex * 100;
-			cv::moveWindow(eyeWindowName, x, y);
+				cv::imshow(eyeWindowName, eyeRoi);
+				int x = 100 + (int)eyeIndex * 100;
+				int y = 100 + (int)eyeIndex * 100;
+				cv::moveWindow(eyeWindowName, x, y);
+			}
 		}
+	}
+
+	if (IS_LOGGING)
+	{
+		std::cout << "Faces/Eyes/Pupils : " << facesCount << "/" << eyesCount << "/" << pupilsCount << std::endl;
 	}
 }
 
 
-void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
+void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect>& pupils, int eyeIndex, bool debug)
 {
 	cv::Mat processingImage;
 	std::stringstream windowNameStringStream;
@@ -225,45 +280,49 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 	int windowOffsetX = 500 + (int)eyeIndex * 100;
 	int windowOffsetY = 500 + (int)eyeIndex * 100;
 
-	cv::threshold(eyeRoi, processingImage, 5, 255, cv::THRESH_BINARY_INV);
+	cv::threshold(eyeRoi, processingImage, THRESHOLD, 255, cv::THRESH_BINARY_INV);
 
-	//start threshold
-	windowNameStringStream << "Pupil " << eyeIndex << " threshold";
-	windowName = windowNameStringStream.str();
-	cv::imshow(windowName, processingImage);
-	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-	windowNameStringStream.str("");
-	//end threshold
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " threshold";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+	}
 
 	cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 2);
 
-	//start erode
-	windowNameStringStream << "Pupil " << eyeIndex << " erode";
-	windowName = windowNameStringStream.str();
-	cv::imshow(windowName, processingImage);
-	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-	windowNameStringStream.str("");
-	//end erode
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " erode";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+	}
 
 	cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 4);
 
-	//start dilate
-	windowNameStringStream << "Pupil " << eyeIndex << " dilate";
-	windowName = windowNameStringStream.str();
-	cv::imshow(windowName, processingImage);
-	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-	windowNameStringStream.str("");
-	//end dilate
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " dilate";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+	}
 
 	cv::medianBlur(processingImage, processingImage, 5);
 
-	//start median blur
-	windowNameStringStream << "Pupil " << eyeIndex << " median blur";
-	windowName = windowNameStringStream.str();
-	cv::imshow(windowName, processingImage);
-	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-	windowNameStringStream.str("");
-	//end median blur
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " median blur";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+	}
 
 	int browOffset = processingImage.rows / 4;
 	cv::Range rowsRange = cv::Range(browOffset, processingImage.rows);
@@ -271,19 +330,25 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 
 	processingImage = processingImage(rowsRange, colsRange);
 
-	//start brow offset
-	windowNameStringStream << "Pupil " << eyeIndex << " brow offset";
-	windowName = windowNameStringStream.str();
-	cv::imshow(windowName, processingImage);
-	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-	windowNameStringStream.str("");
-	//end brow offset
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " brow offset";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+	}
 
 	std::vector<std::vector<cv::Point>> contours;
 	cv::findContours(processingImage, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 	cv::Mat coloredImage;
 	cv::cvtColor(processingImage, coloredImage, cv::COLOR_GRAY2BGR);
-	//cv::drawContours(coloredImage, contours, -1, CV_RGB(255, 0, 0));
+
+	if (debug)
+	{
+		cv::drawContours(coloredImage, contours, -1, CV_RGB(255, 0, 0));
+	}
+
 	for (size_t contourIndex = 0; contourIndex < contours.size(); contourIndex++)
 	{
 		std::vector<cv::Point> contour = contours[contourIndex];
@@ -306,38 +371,57 @@ void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect> pupils, int eyeIndex)
 			continue;
 		}
 
-		cv::circle(coloredImage, center, radius, CV_RGB(0, 255, 0));
-		cv::rectangle(coloredImage, boundingRect, CV_RGB(0, 0, 255));
+		cv::Rect pupilRect = boundingRect;
+		pupilRect.y = pupilRect.y + browOffset;
 
-		std::cout 
-			<< "eye index: " << eyeIndex 
-			<< ", pupil index " << contourIndex 
-			<< ", eye area: " << eyeArea 
-			<< ", pupil rect area: " << pupilRectArea 
-			<< std::endl;
+		pupils.push_back(pupilRect);
+
+		if (debug)
+		{
+			cv::circle(coloredImage, center, radius, CV_RGB(0, 255, 0));
+			cv::rectangle(coloredImage, boundingRect, CV_RGB(0, 0, 255));
+
+			std::cout
+				<< "eye index: " << eyeIndex
+				<< ", pupil index " << contourIndex
+				<< ", eye area: " << eyeArea
+				<< ", pupil rect area: " << pupilRectArea
+				<< std::endl;
+		}
 	}
 
-	//start contours
-	windowNameStringStream << "Pupil " << eyeIndex << " contours";
-	windowName = windowNameStringStream.str();
-	cv::imshow(windowName, coloredImage);
-	cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-	windowNameStringStream.str("");
-	//end contours
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " contours";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, coloredImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+	}
 }
 
 
 void processTestFaceImage()
 {
-	const std::string testImageFilePath = "dataset_1/eyes_center.jpg";
+	const std::string testImageFilePath = TEST_DATASET_NAME + "/" + TEST_IMAGE_NAME + "." + TEST_IMAGE_EXTENSION;
+	const std::string windowName = "Test face detection";
 
 	//cv::Mat faceImage = readImage(testImageFilePath);
 	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
 	//cv::Mat faceImage = readImageAsBinaryStream(testImageFilePath);
 
-	//cv::imshow("Face image", faceImage);
-	processFaceDetection(faceImage);
-	//cv::imshow("Test face detection", faceImage);
+	float imageWidth = faceImage.cols;
+	float imageHeight = faceImage.rows;
+
+	float aspectRatio = imageWidth / imageHeight;
+
+	float width = 500.0f;
+	float height = width / aspectRatio;
+
+	processFaceDetection(faceImage, true);
+	cv::namedWindow(windowName, cv::WINDOW_NORMAL);
+	cv::resizeWindow(windowName, width, height);
+	cv::imshow(windowName, faceImage);
 
 	cv::waitKey(0);
 }
@@ -361,7 +445,7 @@ void processCameraImage()
 			throw std::runtime_error("Can't read frames from camera with id: " + std::to_string(cameraId));
 		}
 
-		processFaceDetection(frame);
+		processFaceDetection(frame, false);
 		cv::imshow("Runtime face detection", frame);
 
 		if (cv::waitKey(16.6) == 27)
