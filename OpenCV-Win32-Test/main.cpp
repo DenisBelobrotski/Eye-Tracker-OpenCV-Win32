@@ -20,7 +20,7 @@ const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
 const std::string TEST_DATASET_NAME = "dataset_2";
 const std::string TEST_IMAGE_NAME = "eyes_center";
 const std::string TEST_IMAGE_EXTENSION = "png";
-const bool IS_VIDEO_MODE = true;
+const bool IS_VIDEO_MODE = false;
 const bool IS_DRAWING = true;
 const bool IS_LOGGING = true;
 const int THRESHOLD = 5;
@@ -38,6 +38,8 @@ cv::Mat readImageAsBinaryStream(const std::string& filePath);
 void processFaceDetection(cv::Mat& sourceImage, bool debug = false);
 void processCameraImage();
 void processTestFaceImage();
+int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int faceIndex, bool debug);
+void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug);
 void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect>& pupils, int eyeIndex, bool debug = false);
 
 
@@ -236,37 +238,130 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), 10);
 			}
 
-			std::vector<cv::Rect> pupilRects;
-			detectPupil(eyeRoi, pupilRects, eyeIndex, debug);
-			pupilsCount += pupilRects.size();
-
-			for (size_t pupilIndex = 0; pupilIndex < pupilRects.size(); pupilIndex++)
-			{
-				cv::Rect pupilRect = pupilRects[pupilIndex];
-
-				if (IS_DRAWING)
-				{
-					cv::rectangle(originalEyeRoi, pupilRect, CV_RGB(0, 0, 255), 10);
-				}
-			}
-
-			if (debug)
-			{
-				windowNameStringStream << "Eye " << eyeIndex << " of face " << faceIndex;
-				std::string eyeWindowName = windowNameStringStream.str();
-				windowNameStringStream.str("");
-
-				cv::imshow(eyeWindowName, eyeRoi);
-				int x = 100 + (int)eyeIndex * 100;
-				int y = 100 + (int)eyeIndex * 100;
-				cv::moveWindow(eyeWindowName, x, y);
-			}
+			pupilsCount += detectPupilContour(eyeRoi, originalEyeRoi, eyeIndex, faceIndex, debug);
+			//detectPupilCenterOfMass(eyeRoi, eyeIndex, debug);
 		}
 	}
 
 	if (IS_LOGGING)
 	{
 		std::cout << "Faces/Eyes/Pupils : " << facesCount << "/" << eyesCount << "/" << pupilsCount << std::endl;
+	}
+}
+
+
+int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int faceIndex, bool debug)
+{
+	std::vector<cv::Rect> pupilRects;
+	detectPupil(eyeRoi, pupilRects, eyeIndex, debug);
+
+	for (size_t pupilIndex = 0; pupilIndex < pupilRects.size(); pupilIndex++)
+	{
+		cv::Rect pupilRect = pupilRects[pupilIndex];
+
+		if (IS_DRAWING)
+		{
+			cv::rectangle(originalEyeRoi, pupilRect, CV_RGB(0, 0, 255), 10);
+		}
+	}
+
+	if (debug)
+	{
+		std::stringstream windowNameStringStream;
+
+		windowNameStringStream << "Eye " << eyeIndex << " of face " << faceIndex;
+		std::string eyeWindowName = windowNameStringStream.str();
+		windowNameStringStream.str("");
+
+		cv::imshow(eyeWindowName, eyeRoi);
+		int x = 100 + (int)eyeIndex * 100;
+		int y = 100 + (int)eyeIndex * 100;
+		cv::moveWindow(eyeWindowName, x, y);
+	}
+
+	return pupilRects.size();
+}
+
+
+void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
+{
+	cv::Mat processingImage;
+	std::stringstream windowNameStringStream;
+	std::string windowName;
+
+	int windowOffsetX = 500 + (int)eyeIndex * 200;
+	int windowOffsetY = 500 + (int)eyeIndex * 0;
+
+	processingImage = eyeRoi.clone();
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " source";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	// enumerate
+	uint8_t* dataPtr = processingImage.ptr();
+	int rowsCount = processingImage.rows;
+	int columnsCount = processingImage.cols;
+	int channelsCount = processingImage.channels();
+
+	uint64_t ySum = 0;
+	uint64_t xSum = 0;
+	uint64_t weightSum = 0;
+
+	// TODO: try and compare calc center of mass for each row firstly, next calc for centers of each row
+	for (uint16_t i = 0; i < rowsCount; i++)
+	{
+		for (uint16_t j = 0; j < columnsCount; j++)
+		{
+			int rowOffset = i * columnsCount * channelsCount;
+			int columnOffset = j * channelsCount;
+			int pixelOffset = rowOffset + columnOffset;
+
+			uint8_t b = dataPtr[pixelOffset + 0];
+			uint8_t g = dataPtr[pixelOffset + 1];
+			uint8_t r = dataPtr[pixelOffset + 2];
+
+			uint16_t weight = 255 - (r + g + b) / 3;
+
+			ySum += i * weight;
+			xSum += j * weight;
+			weightSum += weight;
+
+			// std::cout << (int)b << ", " << (int)g << ", " << (int)r << " : " << weight << std::endl;
+		}
+	}
+
+	std::cout << "\n\n";
+
+	uint64_t yCenter = ySum / weightSum;
+	uint64_t xCenter = xSum / weightSum;
+
+	std::cout << "(" << ySum << ", " << xSum << ", " << weightSum << ")" << std::endl;
+	std::cout << "(" << yCenter << ", " << xCenter << ")" << std::endl;
+	std::cout << "(" << rowsCount << ", " << columnsCount << ", " << channelsCount << ")" << std::endl;
+
+	std::cout << "\n\n\n\n";
+	// end enumerate
+
+	cv::Point center(xCenter, yCenter);
+	cv::Size size(2, 2);
+	cv::Scalar color(255, 0, 255);
+	cv::ellipse(processingImage, center, size, 0, 0, 360, color, 4);
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " detected";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
 	}
 }
 
