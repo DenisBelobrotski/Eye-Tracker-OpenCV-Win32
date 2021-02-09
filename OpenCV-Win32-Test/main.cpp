@@ -4,6 +4,7 @@
 #include <exception>
 #include <sstream>
 #include <string>
+#include <cmath>
 
 #include <opencv2/objdetect.hpp>
 #include <opencv2/highgui.hpp>
@@ -41,6 +42,7 @@ void processTestFaceImage();
 int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int faceIndex, bool debug);
 void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug);
 void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect>& pupils, int eyeIndex, bool debug = false);
+void testCenterOfMass();
 
 
 int main(int argc, const char** argv)
@@ -247,6 +249,29 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 	{
 		std::cout << "Faces/Eyes/Pupils : " << facesCount << "/" << eyesCount << "/" << pupilsCount << std::endl;
 	}
+
+	// testCenterOfMass();
+}
+
+
+void calcCenterOfMass(const std::string& path, int index)
+{
+	cv::Mat testImage = readImageAsBinary(path);
+	std::cout << path << std::endl;
+	detectPupilCenterOfMass(testImage, index, true);
+}
+
+
+void testCenterOfMass()
+{
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(1-1)(3x3).jpg", 0);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(2-2)(5-2).jpg", 1);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(2-2)(5-5).jpg", 2);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(2-2).jpg", 3);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(rand).jpg", 4);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(5-2).jpg", 5);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(7-3)(7-7).jpg", 6);
+	calcCenterOfMass("dataset_4/center_of_mass_test_8x8_(7-3)(7-7)(3-3)(3-7).jpg", 7);
 }
 
 
@@ -340,8 +365,8 @@ void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	std::cout << "\n\n";
 
-	uint64_t yCenter = ySum / weightSum;
-	uint64_t xCenter = xSum / weightSum;
+	uint64_t yCenter = std::round((double_t)ySum / weightSum);
+	uint64_t xCenter = std::round((double_t)xSum / weightSum);
 
 	std::cout << "(" << ySum << ", " << xSum << ", " << weightSum << ")" << std::endl;
 	std::cout << "(" << yCenter << ", " << xCenter << ")" << std::endl;
