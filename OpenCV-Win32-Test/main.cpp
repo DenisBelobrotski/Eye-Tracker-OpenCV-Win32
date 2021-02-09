@@ -16,11 +16,11 @@
 const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
 const std::string HAAR_CASCADES_RELATIVE_PATH = "\\build\\etc\\haarcascades";
 const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt2.xml";
-//const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye_tree_eyeglasses.xml";
-const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
-const std::string TEST_DATASET_NAME = "dataset_2";
-const std::string TEST_IMAGE_NAME = "eyes_center";
-const std::string TEST_IMAGE_EXTENSION = "png";
+//const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
+const std::string EYES_CASCADE_FILE_NAME = "haarcascade_righteye_2splits.xml";
+const std::string TEST_DATASET_NAME = "dataset_1";
+const std::string TEST_IMAGE_NAME = "eyes_right";
+const std::string TEST_IMAGE_EXTENSION = "jpg";
 const bool IS_VIDEO_MODE = false;
 const bool IS_DRAWING = true;
 const bool IS_LOGGING = true;
@@ -40,7 +40,7 @@ void processFaceDetection(cv::Mat& sourceImage, bool debug = false);
 void processCameraImage();
 void processTestFaceImage();
 int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int faceIndex, bool debug);
-void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug);
+cv::Point detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug);
 void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect>& pupils, int eyeIndex, bool debug = false);
 void testCenterOfMass();
 
@@ -187,8 +187,30 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 	int pupilsCount = 0;
 
 	cv::Mat processingImage;
+
 	cv::cvtColor(sourceImage, processingImage, cv::COLOR_BGR2GRAY);
+	//if (debug)
+	//{
+	//	std::stringstream windowNameStringStream;
+	//	windowNameStringStream << "Face grayscale";
+	//	std::string faceWindowName = windowNameStringStream.str();
+	//	cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+	//	cv::imshow(faceWindowName, processingImage);
+	//	cv::resizeWindow(faceWindowName, processingImage.size() / 4);
+	//	windowNameStringStream.str("");
+	//}
+
 	cv::equalizeHist(processingImage, processingImage);
+	//if (debug)
+	//{
+	//	std::stringstream windowNameStringStream;
+	//	windowNameStringStream << "Face equalizeHist";
+	//	std::string faceWindowName = windowNameStringStream.str();
+	//	cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+	//	cv::imshow(faceWindowName, processingImage);
+	//	cv::resizeWindow(faceWindowName, processingImage.size() / 4);
+	//	windowNameStringStream.str("");
+	//}
 
 	std::vector<cv::Rect> faceRects;
 	face_cascade.detectMultiScale(processingImage, faceRects, 1.3, 5);
@@ -238,10 +260,20 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 			if (IS_DRAWING)
 			{
 				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), 10);
+
+				cv::Point eyeCenter(eyeRect.width / 2, eyeRect.height / 2);
+				cv::drawMarker(originalEyeRoi, eyeCenter, CV_RGB(115, 44, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
 			}
 
-			pupilsCount += detectPupilContour(eyeRoi, originalEyeRoi, eyeIndex, faceIndex, debug);
-			//detectPupilCenterOfMass(eyeRoi, eyeIndex, debug);
+			//pupilsCount += detectPupilContour(eyeRoi, originalEyeRoi, eyeIndex, faceIndex, debug);
+
+			cv::Point pupilPosition = detectPupilCenterOfMass(eyeRoi, eyeIndex, debug);
+
+			if (IS_DRAWING)
+			{
+				cv::Scalar pupilColor(255, 0, 255);
+				cv::drawMarker(originalEyeRoi, pupilPosition, pupilColor, cv::MARKER_DIAMOND, 20, 10, cv::LINE_8);
+			}
 		}
 	}
 
@@ -308,15 +340,16 @@ int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int
 }
 
 
-void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
+cv::Point detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
 {
 	cv::Mat processingImage;
 	std::stringstream windowNameStringStream;
 	std::string windowName;
 
 	int windowOffsetX = 500 + (int)eyeIndex * 200;
-	int windowOffsetY = 500 + (int)eyeIndex * 0;
+	int windowOffsetY = 50 + (int)eyeIndex * 0;
 
+	// clone for editing
 	processingImage = eyeRoi.clone();
 
 	if (debug)
@@ -329,6 +362,111 @@ void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 		windowOffsetY += 100;
 	}
+	// end clone for editing
+
+	// cut brow
+	int browOffset = processingImage.rows / 4;
+	cv::Range rowsRange = cv::Range(browOffset, processingImage.rows - browOffset);
+	cv::Range colsRange = cv::Range(0, processingImage.cols);
+
+	processingImage = processingImage(rowsRange, colsRange);
+	// end cutting brow
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " cutted brow";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	// equalize hist
+
+	cv::equalizeHist(processingImage, processingImage);
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " equlize hist";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	// end equalize hist
+
+
+	// threshold
+
+	const int threshold = 10;
+	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY);
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " equlize hist";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	// end threshold
+
+
+	// start erode
+	cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 2);
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " erode";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end erode
+
+
+	// start dilate
+	cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 4);
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " dilate";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end dilate
+
+
+	// start median blur
+	cv::medianBlur(processingImage, processingImage, 5);
+
+	if (debug)
+	{
+		windowNameStringStream << "Pupil " << eyeIndex << " median blur";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end median blur
+
 
 	// enumerate
 	uint8_t* dataPtr = processingImage.ptr();
@@ -375,10 +513,15 @@ void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
 	std::cout << "\n\n\n\n";
 	// end enumerate
 
+	// mark pupil on processing image
+	cv::cvtColor(processingImage, processingImage, cv::COLOR_GRAY2BGR);
 	cv::Point center(xCenter, yCenter);
 	cv::Size size(2, 2);
 	cv::Scalar color(255, 0, 255);
 	cv::ellipse(processingImage, center, size, 0, 0, 360, color, 4);
+
+	// mark pupil on source image
+	cv::Point pupilPosition(xCenter, yCenter + browOffset);
 
 	if (debug)
 	{
@@ -388,6 +531,8 @@ void detectPupilCenterOfMass(cv::Mat eyeRoi, int eyeIndex, bool debug)
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
 	}
+
+	return pupilPosition;
 }
 
 
