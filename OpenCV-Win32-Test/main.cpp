@@ -286,6 +286,7 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 
 
 			// NOTE: HSV, compare skin and sclera saturation on colored image
+			// NOTE: encode HSV and show as BGR https://stackoverflow.com/questions/3017538/opencv-image-conversion-from-rgb-to-hsv
 			// NOTE: compare skin and sclera color on colored image (especially R and B)
 			// NOTE: eye = sclera + pupil
 		}
