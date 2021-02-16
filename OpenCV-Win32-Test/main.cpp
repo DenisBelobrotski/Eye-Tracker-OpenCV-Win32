@@ -421,7 +421,7 @@ cv::Point detectScleraCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool d
 
 	if (debug)
 	{
-		windowNameStringStream << "Sclera " << eyeIndex << " equlize hist";
+		windowNameStringStream << "Sclera " << eyeIndex << " threshold";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
@@ -617,7 +617,7 @@ cv::Point detectPupilCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool de
 
 	if (debug)
 	{
-		windowNameStringStream << "Pupil " << eyeIndex << " equlize hist";
+		windowNameStringStream << "Pupil " << eyeIndex << " threshold";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
