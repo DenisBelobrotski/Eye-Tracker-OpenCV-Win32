@@ -284,6 +284,9 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 				cv::drawMarker(originalEyeRoi, pupilPosition, CV_RGB(255, 0, 255), cv::MARKER_DIAMOND, 20, 10, cv::LINE_8);
 			}
 
+
+			// NOTE: HSV, compare skin and sclera saturation on colored image
+			// NOTE: compare skin and sclera color on colored image (especially R and B)
 			// NOTE: eye = sclera + pupil
 		}
 	}
