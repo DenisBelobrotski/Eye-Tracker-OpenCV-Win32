@@ -19,7 +19,7 @@ const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt2.xml";
 //const std::string EYES_CASCADE_FILE_NAME = "haarcascade_eye.xml";
 const std::string EYES_CASCADE_FILE_NAME = "haarcascade_righteye_2splits.xml";
 const std::string TEST_DATASET_NAME = "dataset_1";
-const std::string TEST_IMAGE_NAME = "eyes_center";
+const std::string TEST_IMAGE_NAME = "eyes_right";
 const std::string TEST_IMAGE_EXTENSION = "jpg";
 const bool IS_VIDEO_MODE = false;
 const bool IS_DRAWING = true;
@@ -40,6 +40,8 @@ void processFaceDetection(cv::Mat& sourceImage, bool debug = false);
 void processCameraImage();
 void processTestFaceImage();
 int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int faceIndex, bool debug);
+cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug);
+cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug);
 void detectSclera(cv::Mat eyeRoi, int eyeIndex, bool debug);
 cv::Point detectScleraCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool debug);
 cv::Point detectPupilCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool debug);
@@ -266,7 +268,7 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), 10);
 
 				cv::Point eyeDetectedRectCenter(eyeRect.width / 2, eyeRect.height / 2);
-				cv::drawMarker(originalEyeRoi, eyeDetectedRectCenter, CV_RGB(115, 44, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
+				cv::drawMarker(originalEyeRoi, eyeDetectedRectCenter, CV_RGB(255, 255, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
 			}
 
 			//pupilsCount += detectPupilContour(eyeRoi, originalEyeRoi, eyeIndex, faceIndex, debug);
@@ -359,6 +361,9 @@ int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int
 
 void detectSclera(cv::Mat eyeRoi, int eyeIndex, bool debug)
 {
+	bool wasDebug = debug;
+	//debug = false;
+
 	cv::Mat processingImage;
 	std::stringstream windowNameStringStream;
 	std::string windowName;
@@ -466,6 +471,145 @@ void detectSclera(cv::Mat eyeRoi, int eyeIndex, bool debug)
 	}
 
 	// end channels separation
+
+	debug = wasDebug;
+
+	cv::Point scleraCenter = detectScleraCenterHue(hue, 30, eyeIndex, debug);
+	cv::Point pupilCenter = detectPupilCenterValue(value, 10, eyeIndex, debug);
+
+	scleraCenter.y += topOffset;
+	pupilCenter.y += topOffset;
+
+
+	if (IS_DRAWING)
+	{
+		cv::drawMarker(eyeRoi, scleraCenter, CV_RGB(0, 255, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
+	}
+}
+
+
+cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug)
+{
+	bool wasDebug = debug;
+	//debug = false;
+
+	std::stringstream windowNameStringStream;
+	std::string windowName;
+
+	int windowOffsetX = 500 + (int)eyeIndex * 200;
+	int windowOffsetY = 50 + (int)eyeIndex * 0;
+
+	// threshold
+
+	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY);
+
+	if (debug)
+	{
+		windowNameStringStream << "HSV Sclera " << eyeIndex << " threshold";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	// end threshold
+
+
+	// start erode
+	cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 1);
+
+	if (debug)
+	{
+		windowNameStringStream << "HSV Sclera " << eyeIndex << " erode";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end erode
+
+
+	// start dilate
+	cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 8);
+
+	if (debug)
+	{
+		windowNameStringStream << "Sclera " << eyeIndex << " dilate";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end dilate
+	
+	
+	// enumerate
+	uint8_t* dataPtr = processingImage.ptr();
+	int rowsCount = processingImage.rows;
+	int columnsCount = processingImage.cols;
+	int channelsCount = processingImage.channels();
+
+	uint64_t ySum = 0;
+	uint64_t xSum = 0;
+	uint64_t weightSum = 0;
+
+	for (uint16_t i = 0; i < rowsCount; i++)
+	{
+		for (uint16_t j = 0; j < columnsCount; j++)
+		{
+			int rowOffset = i * columnsCount * channelsCount;
+			int columnOffset = j * channelsCount;
+			int pixelOffset = rowOffset + columnOffset;
+
+			uint8_t color = dataPtr[pixelOffset];
+
+			uint16_t weight = color;
+
+			ySum += i * weight;
+			xSum += j * weight;
+			weightSum += weight;
+		}
+	}
+
+	uint64_t yCenter = std::round((double_t)ySum / weightSum);
+	uint64_t xCenter = std::round((double_t)xSum / weightSum);
+
+	cv::Point center = cv::Point(xCenter, yCenter);
+
+	// end enumerate
+
+
+	// draw center
+
+	if (debug)
+	{
+		cv::drawMarker(processingImage, center, CV_RGB(0, 0, 0), cv::MARKER_CROSS, 300, 1, cv::LINE_8);
+
+		windowNameStringStream << "Sclera " << eyeIndex << " center";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end draw center
+
+	debug = wasDebug;
+
+	return center;
+}
+
+
+cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug)
+{
+	return cv::Point(0, 0);
 }
 
 
