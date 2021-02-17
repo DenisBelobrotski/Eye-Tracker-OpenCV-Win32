@@ -40,6 +40,7 @@ void processFaceDetection(cv::Mat& sourceImage, bool debug = false);
 void processCameraImage();
 void processTestFaceImage();
 int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int faceIndex, bool debug);
+void detectSclera(cv::Mat eyeRoi, int eyeIndex, bool debug);
 cv::Point detectScleraCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool debug);
 cv::Point detectPupilCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool debug);
 void detectPupil(cv::Mat eyeRoi, std::vector<cv::Rect>& pupils, int eyeIndex, bool debug = false);
@@ -258,6 +259,8 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 			cv::Mat eyeRoi = faceRoi(eyeRect);
 			cv::Mat originalEyeRoi = originalFaceRoi(eyeRect);
 
+			detectSclera(originalEyeRoi, eyeIndex, debug);
+
 			if (IS_DRAWING)
 			{
 				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), 10);
@@ -277,13 +280,12 @@ void processFaceDetection(cv::Mat & sourceImage, bool debug)
 			//	cv::drawMarker(originalEyeRoi, scleraCenter, CV_RGB(115, 44, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
 			//}
 
-			cv::Point pupilPosition = detectPupilCenter(eyeRoi, 10, eyeIndex, debug);
+			//cv::Point pupilPosition = detectPupilCenter(eyeRoi, 10, eyeIndex, debug);
 
-			if (IS_DRAWING)
-			{
-				cv::drawMarker(originalEyeRoi, pupilPosition, CV_RGB(255, 0, 255), cv::MARKER_DIAMOND, 20, 10, cv::LINE_8);
-			}
-
+			//if (IS_DRAWING)
+			//{
+			//	cv::drawMarker(originalEyeRoi, pupilPosition, CV_RGB(255, 0, 255), cv::MARKER_DIAMOND, 20, 10, cv::LINE_8);
+			//}
 
 			// NOTE: HSV, compare skin and sclera saturation on colored image
 			// NOTE: encode HSV and show as BGR https://stackoverflow.com/questions/3017538/opencv-image-conversion-from-rgb-to-hsv
@@ -353,6 +355,119 @@ int detectPupilContour(cv::Mat eyeRoi, cv::Mat originalEyeRoi, int eyeIndex, int
 
 	return pupilRects.size();
 }
+
+
+void detectSclera(cv::Mat eyeRoi, int eyeIndex, bool debug)
+{
+	cv::Mat processingImage;
+	std::stringstream windowNameStringStream;
+	std::string windowName;
+
+	int windowOffsetX = 500 + (int)eyeIndex * 200;
+	int windowOffsetY = 50 + (int)eyeIndex * 0;
+
+	// clone for editing
+	processingImage = eyeRoi.clone();
+
+	if (debug)
+	{
+		windowNameStringStream << "Sclera " << eyeIndex << " source";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end clone for editing
+
+
+	// cut top and bottom
+	int topOffset = processingImage.rows * 2 / 5;
+	int bottomOffset = 0;
+	cv::Range rowsRange = cv::Range(topOffset, processingImage.rows - bottomOffset);
+	cv::Range colsRange = cv::Range(0, processingImage.cols);
+
+	processingImage = processingImage(rowsRange, colsRange);
+
+	if (debug)
+	{
+		windowNameStringStream << "Sclera " << eyeIndex << " cutted brow";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end cutting top and bottom
+
+
+	// convert to HSV
+	cv::cvtColor(processingImage, processingImage, cv::COLOR_BGR2HSV, 1);
+
+	if (debug)
+	{
+		windowNameStringStream << "Sclera " << eyeIndex << " HSV";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, processingImage);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+	// end convert to HSV
+
+
+	// separate channels
+	
+	int rows = processingImage.rows;
+	int cols = processingImage.cols;
+	
+	cv::Mat hue = cv::Mat(rows, cols, CV_8UC1);
+	cv::Mat saturation = cv::Mat(rows, cols, CV_8UC1);
+	cv::Mat value = cv::Mat(rows, cols, CV_8UC1);
+
+	std::vector<cv::Mat> separatedChannels = { hue, saturation, value };
+
+	cv::split(processingImage, separatedChannels);
+
+	if (debug)
+	{
+		windowNameStringStream << "Hue " << eyeIndex << " ";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, hue);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	if (debug)
+	{
+		windowNameStringStream << "Saturation " << eyeIndex << " ";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, saturation);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	if (debug)
+	{
+		windowNameStringStream << "Value " << eyeIndex << " ";
+		windowName = windowNameStringStream.str();
+		cv::imshow(windowName, value);
+		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+		windowNameStringStream.str("");
+
+		windowOffsetY += 100;
+	}
+
+	// end channels separation
+}
+
 
 
 cv::Point detectScleraCenter(cv::Mat eyeRoi, int threshold, int eyeIndex, bool debug)
