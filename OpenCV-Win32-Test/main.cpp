@@ -12,29 +12,14 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/features2d.hpp>
 
+#include "Utils.h"
+#include "Constants.h"
 
-const std::string OPENCV_ENVIRONMENT_VARIABLE_NAME = "OPENCV_DIR";
-const std::string HAAR_CASCADES_RELATIVE_PATH = "\\build\\etc\\haarcascades";
-const std::string FACE_CASCADE_FILE_NAME = "haarcascade_frontalface_alt2.xml";
-const std::string EYES_CASCADE_FILE_NAME = "haarcascade_righteye_2splits.xml";
-const std::string TEST_DATASET_NAME = "dataset_1";
-const std::string TEST_IMAGE_NAME = "eyes_center";
-const std::string TEST_IMAGE_EXTENSION = "jpg";
-const bool IS_VIDEO_MODE = false;
-const bool IS_DRAWING = true;
-const bool IS_LOGGING = true;
-const int THRESHOLD = 5;
 
 
 cv::CascadeClassifier face_cascade;
 cv::CascadeClassifier eyes_cascade;
 
-
-std::string getEnvironmentVariable(const std::string& variable);
-std::string readTextFile(const std::string& filePath);
-cv::Mat readImage(const std::string& filePath);
-cv::Mat readImageAsBinary(const std::string& filePath);
-cv::Mat readImageAsBinaryStream(const std::string& filePath);
 
 void processCameraImage();
 void processTestFaceImage();
@@ -84,98 +69,6 @@ int main(int argc, const char** argv)
 	}
 	
 	return EXIT_SUCCESS;
-}
-
-
-std::string getEnvironmentVariable(const std::string& variable)
-{
-	size_t bufferSize = 0;
-
-	getenv_s(&bufferSize, nullptr, 0, variable.c_str());
-
-	if (bufferSize <= 0)
-	{
-		throw std::runtime_error("Can't find environment variable: " + variable);
-	}
-
-	std::unique_ptr<char[]> buffer(new char[bufferSize]);
-	getenv_s(&bufferSize, buffer.get(), bufferSize, variable.c_str());
-	std::string result = std::move(buffer.get());
-
-	return std::move(result);
-}
-
-
-std::string readTextFile(const std::string & filePath)
-{
-	std::ifstream fin;
-	fin.open(filePath);
-
-	if (!fin.is_open())
-	{
-		throw std::runtime_error("Can't find file: " + filePath);
-	}
-
-	std::stringstream fileContentStream;
-	std::string fileLine;
-	while (getline(fin, fileLine))
-	{
-		fileContentStream << fileLine << std::endl;
-	}
-
-	fin.close();
-
-	return std::move(fileContentStream.str());
-}
-
-
-cv::Mat readImage(const std::string & filePath)
-{
-	cv::Mat image = cv::imread(filePath, cv::IMREAD_COLOR);
-
-	if (image.empty())
-	{
-		throw std::runtime_error("Can't read image: " + filePath);
-	}
-
-	if (image.data == nullptr)
-	{
-		throw std::runtime_error("Bad image data: " + filePath);
-	}
-
-	return image;
-}
-
-
-cv::Mat readImageAsBinary(const std::string& filePath)
-{
-	std::ifstream in(filePath, std::ios::in | std::ios::binary);
-
-	if (!in.good())
-	{
-		throw std::runtime_error("Bad file " + filePath);
-	}
-
-	in.seekg(0, std::ios::end);
-	auto fileSize = in.tellg();
-	in.seekg(0, std::ios::beg);
-
-	std::unique_ptr<char[]> fileBuffer(new char[fileSize]);
-	if (!in.read(fileBuffer.get(), fileSize))
-	{
-		throw std::runtime_error("Can't read file: " + filePath);
-	}
-
-	std::vector<char> data(fileBuffer.get(), fileBuffer.get() + fileSize);
-	return cv::imdecode(cv::Mat(data), cv::IMREAD_COLOR);
-}
-
-
-cv::Mat readImageAsBinaryStream(const std::string& filePath)
-{
-	std::ifstream in(filePath, std::ios::in | std::ios::binary);
-	std::vector<char> fileBuffer((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-	return cv::imdecode(cv::Mat(fileBuffer), cv::IMREAD_COLOR);
 }
 
 
