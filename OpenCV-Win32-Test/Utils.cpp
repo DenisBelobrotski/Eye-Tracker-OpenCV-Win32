@@ -1,4 +1,4 @@
-#include "Utils.h"
+#include "Utils.hpp"
 
 std::string getEnvironmentVariable(const std::string& variable)
 {

@@ -14,7 +14,7 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/features2d.hpp>
 
-#include "Constants.h"
+#include "Constants.hpp"
 
 
 std::string getEnvironmentVariable(const std::string& variable);
