@@ -14,7 +14,7 @@
 
 #include "Constants.hpp"
 #include "Utils.hpp"
-#include "Processing.hpp"
+#include "FaceProcessing.hpp"
 
 
 void processCameraImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade);
