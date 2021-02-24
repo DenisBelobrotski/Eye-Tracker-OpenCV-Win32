@@ -14,4 +14,5 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/features2d.hpp>
 
-#include "FaceProcessing.hpp"
+
+cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug);

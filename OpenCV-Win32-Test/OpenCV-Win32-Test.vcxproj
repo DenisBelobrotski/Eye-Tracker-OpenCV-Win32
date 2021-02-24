@@ -140,13 +140,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="EyeProcessing.cpp" />
+    <ClCompile Include="FaceProcessing.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Processing.cpp" />
+    <ClCompile Include="PupilProcessing.cpp" />
+    <ClCompile Include="ScleraProcessing.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constants.hpp" />
+    <ClInclude Include="EyeProcessing.hpp" />
+    <ClInclude Include="FaceProcessing.hpp" />
     <ClInclude Include="Processing.hpp" />
+    <ClInclude Include="PupilProcessing.hpp" />
+    <ClInclude Include="ScleraProcessing.hpp" />
     <ClInclude Include="Utils.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

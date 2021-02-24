@@ -14,4 +14,8 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/features2d.hpp>
 
-#include "FaceProcessing.hpp"
+#include "Constants.hpp"
+#include "EyeProcessing.hpp"
+
+void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade,
+	cv::Mat& sourceImage, bool debug);

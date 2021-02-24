@@ -14,4 +14,9 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/features2d.hpp>
 
-#include "FaceProcessing.hpp"
+#include "Constants.hpp"
+#include "ScleraProcessing.hpp"
+#include "PupilProcessing.hpp"
+
+
+void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug);
