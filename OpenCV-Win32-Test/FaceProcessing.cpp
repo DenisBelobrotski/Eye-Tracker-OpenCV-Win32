@@ -1,8 +1,7 @@
 #include "FaceProcessing.hpp"
 
 
-void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade,
-	cv::Mat& sourceImage, bool debug)
+void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade, cv::Mat& sourceImage, bool debug)
 {
 	int facesCount = 0;
 	int eyesCount = 0;
@@ -10,29 +9,56 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 	cv::Mat processingImage;
 
+	// original image
+
+	if (debug)
+	{
+		std::stringstream windowNameStringStream;
+		windowNameStringStream << "Face original";
+		std::string faceWindowName = windowNameStringStream.str();
+		cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+		cv::imshow(faceWindowName, sourceImage);
+		cv::resizeWindow(faceWindowName, sourceImage.size() / 4);
+		windowNameStringStream.str("");
+	}
+
+	// end original image
+
+
+	// grayscale
+
 	cv::cvtColor(sourceImage, processingImage, cv::COLOR_BGR2GRAY);
-	//if (debug)
-	//{
-	//	std::stringstream windowNameStringStream;
-	//	windowNameStringStream << "Face grayscale";
-	//	std::string faceWindowName = windowNameStringStream.str();
-	//	cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
-	//	cv::imshow(faceWindowName, processingImage);
-	//	cv::resizeWindow(faceWindowName, processingImage.size() / 4);
-	//	windowNameStringStream.str("");
-	//}
+
+	if (debug)
+	{
+		std::stringstream windowNameStringStream;
+		windowNameStringStream << "Face grayscale";
+		std::string faceWindowName = windowNameStringStream.str();
+		cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+		cv::imshow(faceWindowName, processingImage);
+		cv::resizeWindow(faceWindowName, processingImage.size() / 4);
+		windowNameStringStream.str("");
+	}
+
+	// end grayscale
+
+
+	// histogram equalization
 
 	cv::equalizeHist(processingImage, processingImage);
-	//if (debug)
-	//{
-	//	std::stringstream windowNameStringStream;
-	//	windowNameStringStream << "Face equalizeHist";
-	//	std::string faceWindowName = windowNameStringStream.str();
-	//	cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
-	//	cv::imshow(faceWindowName, processingImage);
-	//	cv::resizeWindow(faceWindowName, processingImage.size() / 4);
-	//	windowNameStringStream.str("");
-	//}
+
+	if (debug)
+	{
+		std::stringstream windowNameStringStream;
+		windowNameStringStream << "Face histogram equalization";
+		std::string faceWindowName = windowNameStringStream.str();
+		cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+		cv::imshow(faceWindowName, processingImage);
+		cv::resizeWindow(faceWindowName, processingImage.size() / 4);
+		windowNameStringStream.str("");
+	}
+
+	// end histogram equalization
 
 	std::vector<cv::Rect> faceRects;
 	face_cascade.detectMultiScale(processingImage, faceRects, 1.3, 5);
@@ -53,7 +79,7 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 		if (debug)
 		{
-			windowNameStringStream << "Face " << faceIndex;
+			windowNameStringStream << "Face " << faceIndex << " grayscale";
 			std::string faceWindowName = windowNameStringStream.str();
 			cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
 			cv::imshow(faceWindowName, faceRoi);
@@ -78,6 +104,16 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 			cv::Mat eyeRoi = faceRoi(eyeRect);
 			cv::Mat originalEyeRoi = originalFaceRoi(eyeRect);
+
+			if (debug)
+			{
+				windowNameStringStream << "Eye " << eyeIndex << " cut grayscale";
+				std::string windowName = windowNameStringStream.str();
+				cv::namedWindow(windowName, cv::WINDOW_NORMAL);
+				cv::imshow(windowName, eyeRoi);
+				cv::moveWindow(windowName, 200, 500 + eyeIndex * 50);
+				windowNameStringStream.str("");
+			}
 
 			processEye(originalEyeRoi, eyeIndex, debug);
 
