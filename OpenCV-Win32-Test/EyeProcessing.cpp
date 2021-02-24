@@ -4,13 +4,13 @@
 void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 {
 	bool wasDebug = debug;
-	debug = false;
+	debug = true;
 
 	cv::Mat processingImage;
 	std::stringstream windowNameStringStream;
 	std::string windowName;
 
-	int windowOffsetX = 500 + (int)eyeIndex * 200;
+	int windowOffsetX = 100 + (int)eyeIndex * 200;
 	int windowOffsetY = 50 + (int)eyeIndex * 0;
 
 	// clone for editing
@@ -18,7 +18,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	if (debug)
 	{
-		windowNameStringStream << "Sclera " << eyeIndex << " source";
+		windowNameStringStream << "Eye " << eyeIndex << " source";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
@@ -39,7 +39,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	if (debug)
 	{
-		windowNameStringStream << "Sclera " << eyeIndex << " cutted brow";
+		windowNameStringStream << "Eye " << eyeIndex << " cut brow";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
@@ -55,7 +55,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	if (debug)
 	{
-		windowNameStringStream << "Sclera " << eyeIndex << " HSV";
+		windowNameStringStream << "Eye " << eyeIndex << " HSV";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);

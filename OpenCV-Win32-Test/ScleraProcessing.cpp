@@ -117,11 +117,19 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 	if (debug)
 	{
-		cv::drawMarker(processingImage, center, CV_RGB(0, 0, 0), cv::MARKER_CROSS, 300, 1, cv::LINE_8);
+		int rows = processingImage.rows;
+		int cols = processingImage.cols;
+		
+		int markerSize = std::min(rows, cols);
+		int markerThickness = std::max(markerSize / 100, 1);
+
+		cv::Mat coloredImage = cv::Mat(rows, cols, CV_8UC3);
+		cv::cvtColor(processingImage, coloredImage, cv::COLOR_GRAY2BGR);
+		cv::drawMarker(coloredImage, center, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, markerThickness, cv::LINE_8);
 
 		windowNameStringStream << "HSV: Sclera " << eyeIndex << " center";
 		windowName = windowNameStringStream.str();
-		cv::imshow(windowName, processingImage);
+		cv::imshow(windowName, coloredImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
 

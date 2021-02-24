@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 #include <opencv2/objdetect.hpp>
 #include <opencv2/highgui.hpp>
