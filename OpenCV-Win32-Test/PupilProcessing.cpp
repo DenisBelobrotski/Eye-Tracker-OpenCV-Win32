@@ -1,11 +1,9 @@
 #include "PupilProcessing.hpp"
+#include "Constants.hpp"
 
 
-cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug)
+cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eyeIndex)
 {
-	bool wasDebug = debug;
-	debug = true;
-
 	std::stringstream windowNameStringStream;
 	std::string windowName;
 
@@ -14,7 +12,7 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 	// original image
 
-	if (debug)
+	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
 		windowNameStringStream << "HSV: Pupil " << eyeIndex << " Value channel";
 		windowName = windowNameStringStream.str();
@@ -30,18 +28,20 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 	// equalize hist
 
-	// useless????
-	cv::equalizeHist(processingImage, processingImage);
-
-	if (debug)
+	if (IS_PUPIL_HISTOGRAM_EQUALIZATION_ENABLED)
 	{
-		windowNameStringStream << "HSV: Pupil " << eyeIndex << " equlize hist";
-		windowName = windowNameStringStream.str();
-		cv::imshow(windowName, processingImage);
-		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-		windowNameStringStream.str("");
+		cv::equalizeHist(processingImage, processingImage);
 
-		windowOffsetY += 100;
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "HSV: Pupil " << eyeIndex << " equlize hist";
+			windowName = windowNameStringStream.str();
+			cv::imshow(windowName, processingImage);
+			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+			windowNameStringStream.str("");
+
+			windowOffsetY += 100;
+		}
 	}
 
 	// end equalize hist
@@ -49,9 +49,9 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 	// threshold
 
-	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY);
+	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY_INV);
 
-	if (debug)
+	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
 		windowNameStringStream << "HSV: Pupil " << eyeIndex << " threshold";
 		windowName = windowNameStringStream.str();
@@ -66,33 +66,41 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 
 	// start erode
-	cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 2);
 
-	if (debug)
+	if (IS_PUPIL_EROSION_ENABLED)
 	{
-		windowNameStringStream << "HSV: Pupil " << eyeIndex << " erode";
-		windowName = windowNameStringStream.str();
-		cv::imshow(windowName, processingImage);
-		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-		windowNameStringStream.str("");
+		cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 2);
 
-		windowOffsetY += 100;
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "HSV: Pupil " << eyeIndex << " erode";
+			windowName = windowNameStringStream.str();
+			cv::imshow(windowName, processingImage);
+			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+			windowNameStringStream.str("");
+
+			windowOffsetY += 100;
+		}
 	}
+	
 	// end erode
 
 
 	// start dilate
-	cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 4);
-
-	if (debug)
+	if (IS_PUPIL_DILATION_ENABLED)
 	{
-		windowNameStringStream << "HSV: Pupil " << eyeIndex << " dilate";
-		windowName = windowNameStringStream.str();
-		cv::imshow(windowName, processingImage);
-		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-		windowNameStringStream.str("");
+		cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 4);
 
-		windowOffsetY += 100;
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "HSV: Pupil " << eyeIndex << " dilate";
+			windowName = windowNameStringStream.str();
+			cv::imshow(windowName, processingImage);
+			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+			windowNameStringStream.str("");
+
+			windowOffsetY += 100;
+		}
 	}
 	// end dilate
 
@@ -109,15 +117,16 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 	for (uint16_t i = 0; i < rowsCount; i++)
 	{
+		int rowOffset = i * columnsCount * channelsCount;
+
 		for (uint16_t j = 0; j < columnsCount; j++)
 		{
-			int rowOffset = i * columnsCount * channelsCount;
 			int columnOffset = j * channelsCount;
 			int pixelOffset = rowOffset + columnOffset;
 
 			uint8_t color = dataPtr[pixelOffset];
 
-			uint16_t weight = 255 - color;
+			uint16_t weight = color;
 
 			ySum += i * weight;
 			xSum += j * weight;
@@ -134,7 +143,7 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 	// draw center
 
-	if (debug)
+	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
 		int rows = processingImage.rows;
 		int cols = processingImage.cols;
@@ -144,7 +153,11 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 		cv::Mat coloredImage = cv::Mat(rows, cols, CV_8UC3);
 		cv::cvtColor(processingImage, coloredImage, cv::COLOR_GRAY2BGR);
-		cv::drawMarker(coloredImage, center, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, markerThickness, cv::LINE_8);
+
+		if (IS_DRAWING)
+		{
+			cv::drawMarker(coloredImage, center, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, markerThickness, cv::LINE_8);
+		}
 
 		windowNameStringStream << "HSV: Pupil " << eyeIndex << " center";
 		windowName = windowNameStringStream.str();
@@ -156,8 +169,6 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 	}
 
 	// end draw center
-
-	debug = wasDebug;
 
 	return center;
 }

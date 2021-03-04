@@ -1,11 +1,9 @@
 #include "EyeProcessing.hpp"
+#include "Utils.hpp"
 
 
-void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
+void processEye(cv::Mat eyeRoi, int eyeIndex)
 {
-	bool wasDebug = debug;
-	debug = true;
-
 	cv::Mat processingImage;
 	std::stringstream windowNameStringStream;
 	std::string windowName;
@@ -16,7 +14,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 	// clone for editing
 	processingImage = eyeRoi.clone();
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		windowNameStringStream << "Eye " << eyeIndex << " source";
 		windowName = windowNameStringStream.str();
@@ -37,7 +35,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	processingImage = processingImage(rowsRange, colsRange);
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		windowNameStringStream << "Eye " << eyeIndex << " cut brow";
 		windowName = windowNameStringStream.str();
@@ -53,7 +51,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 	// convert to HSV
 	cv::cvtColor(processingImage, processingImage, cv::COLOR_BGR2HSV, 1);
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		windowNameStringStream << "Eye " << eyeIndex << " HSV";
 		windowName = windowNameStringStream.str();
@@ -79,7 +77,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	cv::split(processingImage, separatedChannels);
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		windowNameStringStream << "Hue " << eyeIndex << " ";
 		windowName = windowNameStringStream.str();
@@ -90,7 +88,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 		windowOffsetY += 100;
 	}
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		windowNameStringStream << "Saturation " << eyeIndex << " ";
 		windowName = windowNameStringStream.str();
@@ -101,7 +99,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 		windowOffsetY += 100;
 	}
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		windowNameStringStream << "Value " << eyeIndex << " ";
 		windowName = windowNameStringStream.str();
@@ -114,10 +112,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	// end channels separation
 
-	debug = wasDebug;
-
-	cv::Point scleraCenter = detectScleraCenterHue(hue, 30, eyeIndex, debug);
-	cv::Point pupilCenter = detectPupilCenterValue(value, 10, eyeIndex, debug);
+	cv::Point scleraCenter = detectScleraCenterHue(hue, SCLERA_THRESHOLD, eyeIndex);
+	cv::Point pupilCenter = detectPupilCenterValue(value, PUPIL_THRESHOLD, eyeIndex);
 
 	scleraCenter.y += topOffset;
 	pupilCenter.y += topOffset;
@@ -125,7 +121,12 @@ void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug)
 
 	if (IS_DRAWING)
 	{
-		cv::drawMarker(eyeRoi, scleraCenter, CV_RGB(0, 255, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
-		cv::drawMarker(eyeRoi, pupilCenter, CV_RGB(255, 0, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
+		int markerSize = getMarkerSizeForMat(eyeRoi, 4);
+		int thickness = getLineThicknessForMat(eyeRoi, 100, 1);
+		int lineType = cv::LINE_8;
+		cv::Point roiCenter = getMatCenter(eyeRoi);
+		cv::drawMarker(eyeRoi, roiCenter, CV_RGB(255, 255, 0), cv::MARKER_CROSS, markerSize, thickness, lineType);
+		cv::drawMarker(eyeRoi, scleraCenter, CV_RGB(0, 255, 0), cv::MARKER_CROSS, markerSize, thickness, lineType);
+		cv::drawMarker(eyeRoi, pupilCenter, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, thickness, lineType);
 	}
 }

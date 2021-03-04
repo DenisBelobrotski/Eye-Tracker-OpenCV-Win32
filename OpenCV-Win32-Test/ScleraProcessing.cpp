@@ -1,11 +1,9 @@
 #include "ScleraProcessing.hpp"
+#include "Constants.hpp"
 
 
-cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug)
+cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex)
 {
-	bool wasDebug = debug;
-	debug = true;
-
 	std::stringstream windowNameStringStream;
 	std::string windowName;
 
@@ -14,7 +12,7 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 	// original image
 
-	if (debug)
+	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
 		windowNameStringStream << "HSV: Sclera " << eyeIndex << " Hue channel";
 		windowName = windowNameStringStream.str();
@@ -32,7 +30,7 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY);
 
-	if (debug)
+	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
 		windowNameStringStream << "HSV: Sclera " << eyeIndex << " threshold";
 		windowName = windowNameStringStream.str();
@@ -47,33 +45,39 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 
 	// start erode
-	cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 1);
-
-	if (debug)
+	if (IS_SCLERA_EROSION_ENABLED)
 	{
-		windowNameStringStream << "HSV: Sclera " << eyeIndex << " erode";
-		windowName = windowNameStringStream.str();
-		cv::imshow(windowName, processingImage);
-		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-		windowNameStringStream.str("");
+		cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 1);
 
-		windowOffsetY += 100;
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "HSV: Sclera " << eyeIndex << " erode";
+			windowName = windowNameStringStream.str();
+			cv::imshow(windowName, processingImage);
+			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+			windowNameStringStream.str("");
+
+			windowOffsetY += 100;
+		}
 	}
 	// end erode
 
 
 	// start dilate
-	cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 8);
-
-	if (debug)
+	if (IS_SCLERA_DILATION_ENABLED)
 	{
-		windowNameStringStream << "HSV: Sclera " << eyeIndex << " dilate";
-		windowName = windowNameStringStream.str();
-		cv::imshow(windowName, processingImage);
-		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
-		windowNameStringStream.str("");
+		cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 8);
 
-		windowOffsetY += 100;
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "HSV: Sclera " << eyeIndex << " dilate";
+			windowName = windowNameStringStream.str();
+			cv::imshow(windowName, processingImage);
+			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+			windowNameStringStream.str("");
+
+			windowOffsetY += 100;
+		}
 	}
 	// end dilate
 
@@ -90,9 +94,10 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 	for (uint16_t i = 0; i < rowsCount; i++)
 	{
+		int rowOffset = i * columnsCount * channelsCount;
+
 		for (uint16_t j = 0; j < columnsCount; j++)
 		{
-			int rowOffset = i * columnsCount * channelsCount;
 			int columnOffset = j * channelsCount;
 			int pixelOffset = rowOffset + columnOffset;
 
@@ -115,7 +120,7 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 	// draw center
 
-	if (debug)
+	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
 		int rows = processingImage.rows;
 		int cols = processingImage.cols;
@@ -124,8 +129,13 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 		int markerThickness = std::max(markerSize / 100, 1);
 
 		cv::Mat coloredImage = cv::Mat(rows, cols, CV_8UC3);
+
 		cv::cvtColor(processingImage, coloredImage, cv::COLOR_GRAY2BGR);
-		cv::drawMarker(coloredImage, center, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, markerThickness, cv::LINE_8);
+
+		if (IS_DRAWING)
+		{
+			cv::drawMarker(coloredImage, center, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, markerThickness, cv::LINE_8);
+		}
 
 		windowNameStringStream << "HSV: Sclera " << eyeIndex << " center";
 		windowName = windowNameStringStream.str();
@@ -137,8 +147,6 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 	}
 
 	// end draw center
-
-	debug = wasDebug;
 
 	return center;
 }

@@ -5,4 +5,4 @@
 #include "PupilProcessing.hpp"
 
 
-void processEye(cv::Mat eyeRoi, int eyeIndex, bool debug);
+void processEye(cv::Mat eyeRoi, int eyeIndex);

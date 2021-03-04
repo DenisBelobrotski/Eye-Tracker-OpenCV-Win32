@@ -90,3 +90,21 @@ cv::Mat readImageAsBinaryStream(const std::string& filePath)
 	std::vector<char> fileBuffer((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 	return cv::imdecode(cv::Mat(fileBuffer), cv::IMREAD_COLOR);
 }
+
+
+int getLineThicknessForMat(cv::Mat& mat, int delimeter, int minValue)
+{
+	return std::max(std::min(mat.cols, mat.rows) / delimeter, minValue);
+}
+
+
+int getMarkerSizeForMat(cv::Mat& mat, int delimeter, int minValue)
+{
+	return std::max(std::min(mat.cols, mat.rows) / delimeter, minValue);
+}
+
+
+cv::Point getMatCenter(cv::Mat& mat)
+{
+	return cv::Point(mat.cols / 2, mat.rows / 2);
+}

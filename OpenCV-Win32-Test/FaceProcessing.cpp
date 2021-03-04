@@ -1,7 +1,8 @@
 #include "FaceProcessing.hpp"
+#include "Utils.hpp"
 
 
-void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade, cv::Mat& sourceImage, bool debug)
+void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade, cv::Mat& sourceImage)
 {
 	int facesCount = 0;
 	int eyesCount = 0;
@@ -11,7 +12,7 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 	// original image
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		std::stringstream windowNameStringStream;
 		windowNameStringStream << "Face original";
@@ -29,7 +30,7 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 	cv::cvtColor(sourceImage, processingImage, cv::COLOR_BGR2GRAY);
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		std::stringstream windowNameStringStream;
 		windowNameStringStream << "Face grayscale";
@@ -47,7 +48,7 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 	cv::equalizeHist(processingImage, processingImage);
 
-	if (debug)
+	if (IS_DEBUG)
 	{
 		std::stringstream windowNameStringStream;
 		windowNameStringStream << "Face histogram equalization";
@@ -74,10 +75,11 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 		if (IS_DRAWING)
 		{
-			cv::rectangle(sourceImage, faceRect, CV_RGB(255, 0, 0), 10);
+			int thickness = getLineThicknessForMat(sourceImage, 200);
+			cv::rectangle(sourceImage, faceRect, CV_RGB(255, 0, 0), thickness);
 		}
 
-		if (debug)
+		if (IS_DEBUG)
 		{
 			windowNameStringStream << "Face " << faceIndex << " grayscale";
 			std::string faceWindowName = windowNameStringStream.str();
@@ -105,7 +107,7 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 			cv::Mat eyeRoi = faceRoi(eyeRect);
 			cv::Mat originalEyeRoi = originalFaceRoi(eyeRect);
 
-			if (debug)
+			if (IS_DEBUG)
 			{
 				windowNameStringStream << "Eye " << eyeIndex << " cut grayscale";
 				std::string windowName = windowNameStringStream.str();
@@ -115,14 +117,12 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 				windowNameStringStream.str("");
 			}
 
-			processEye(originalEyeRoi, eyeIndex, debug);
+			processEye(originalEyeRoi, eyeIndex);
 
 			if (IS_DRAWING)
 			{
-				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), 10);
-
-				cv::Point eyeDetectedRectCenter(eyeRect.width / 2, eyeRect.height / 2);
-				cv::drawMarker(originalEyeRoi, eyeDetectedRectCenter, CV_RGB(255, 255, 0), cv::MARKER_CROSS, 100, 5, cv::LINE_8);
+				int thickness = getLineThicknessForMat(originalFaceRoi, 100);
+				cv::rectangle(originalFaceRoi, eyeRect, CV_RGB(0, 255, 0), thickness);
 			}
 
 			// NOTE: HSV, compare skin and sclera saturation on colored image

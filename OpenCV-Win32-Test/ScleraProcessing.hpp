@@ -4,4 +4,4 @@
 #include <opencv2/imgproc.hpp>
 
 
-cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex, bool debug);
+cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex);

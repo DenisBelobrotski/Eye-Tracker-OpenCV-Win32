@@ -70,7 +70,7 @@ void processCameraImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassifi
 			throw std::runtime_error("Can't read frames from camera with id: " + std::to_string(cameraId));
 		}
 
-		processFaceDetection(face_cascade, eyes_cascade, frame, false);
+		processFaceDetection(face_cascade, eyes_cascade, frame);
 		cv::imshow("Runtime face detection", frame);
 
 		if (cv::waitKey(16.6) == 27)
@@ -98,7 +98,7 @@ void processTestFaceImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 	float width = 500.0f;
 	float height = width / aspectRatio;
 
-	processFaceDetection(face_cascade, eyes_cascade, faceImage, true);
+	processFaceDetection(face_cascade, eyes_cascade, faceImage);
 	cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 	cv::resizeWindow(windowName, width, height);
 	cv::imshow(windowName, faceImage);
