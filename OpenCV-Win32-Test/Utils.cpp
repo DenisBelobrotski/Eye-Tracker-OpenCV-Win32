@@ -157,6 +157,6 @@ void checkResultsFolder()
 	system("rmdir EyeTrackingResults /s /q");
 	system("mkdir EyeTrackingResults");
 #else
-	throw std::runtime_error("checkResultsFolder() not implemented for this target");
+	throw std::runtime_error("checkResultsFolder() not implemented for this target platform");
 #endif
 }
