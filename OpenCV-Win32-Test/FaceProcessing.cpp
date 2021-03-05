@@ -1,5 +1,5 @@
 #include "FaceProcessing.hpp"
-#include "Utils.hpp"
+#include "CvUtils.hpp"
 
 
 void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade, cv::Mat& sourceImage)

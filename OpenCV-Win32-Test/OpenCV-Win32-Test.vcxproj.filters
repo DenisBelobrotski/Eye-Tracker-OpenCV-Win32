@@ -33,6 +33,9 @@
     <ClCompile Include="PupilProcessing.cpp">
       <Filter>Файлы ресурсов</Filter>
     </ClCompile>
+    <ClCompile Include="CvUtils.cpp">
+      <Filter>Файлы ресурсов</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constants.hpp">
@@ -51,6 +54,9 @@
       <Filter>Файлы ресурсов</Filter>
     </ClInclude>
     <ClInclude Include="PupilProcessing.hpp">
+      <Filter>Файлы ресурсов</Filter>
+    </ClInclude>
+    <ClInclude Include="CvUtils.hpp">
       <Filter>Файлы ресурсов</Filter>
     </ClInclude>
   </ItemGroup>

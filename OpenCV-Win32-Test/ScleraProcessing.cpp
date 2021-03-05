@@ -1,5 +1,6 @@
 #include "ScleraProcessing.hpp"
 #include "Constants.hpp"
+#include "CvUtils.hpp"
 
 
 cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
@@ -47,7 +48,9 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 	// start erode
 	if (IS_SCLERA_EROSION_ENABLED)
 	{
-		cv::erode(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 1);
+		const cv::Mat kernel = cv::Mat();
+		const cv::Point anchor = cv::Point(-1, -1);
+		cv::erode(processingImage, processingImage, kernel, anchor, SCLERA_EROSION_ITERATIONS_COUNT);
 
 		if (IS_DEBUG)
 		{
@@ -66,7 +69,9 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 	// start dilate
 	if (IS_SCLERA_DILATION_ENABLED)
 	{
-		cv::dilate(processingImage, processingImage, cv::Mat(), cv::Point(-1, -1), 8);
+		const cv::Mat kernel = cv::Mat();
+		const cv::Point anchor = cv::Point(-1, -1);
+		cv::dilate(processingImage, processingImage, kernel, anchor, SCLERA_DILATION_ITERATIONS_COUNT);
 
 		if (IS_DEBUG)
 		{
@@ -82,40 +87,11 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 	// end dilate
 
 
-	// enumerate
-	uint8_t* dataPtr = processingImage.ptr();
-	int rowsCount = processingImage.rows;
-	int columnsCount = processingImage.cols;
-	int channelsCount = processingImage.channels();
+	// center of mass
 
-	uint64_t ySum = 0;
-	uint64_t xSum = 0;
-	uint64_t weightSum = 0;
+	cv::Point center = getCenterOfMass8UC1(processingImage);
 
-	for (uint16_t i = 0; i < rowsCount; i++)
-	{
-		int rowOffset = i * columnsCount * channelsCount;
-
-		for (uint16_t j = 0; j < columnsCount; j++)
-		{
-			int columnOffset = j * channelsCount;
-			int pixelOffset = rowOffset + columnOffset;
-
-			uint8_t color = dataPtr[pixelOffset];
-
-			uint16_t weight = color;
-
-			ySum += i * weight;
-			xSum += j * weight;
-			weightSum += weight;
-		}
-	}
-
-	uint64_t yCenter = std::round((double_t)ySum / weightSum);
-	uint64_t xCenter = std::round((double_t)xSum / weightSum);
-
-	cv::Point center = cv::Point(xCenter, yCenter);
-	// end enumerate
+	// end center of mass
 
 
 	// draw center

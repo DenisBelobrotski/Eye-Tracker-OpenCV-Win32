@@ -140,6 +140,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CvUtils.cpp" />
     <ClCompile Include="EyeProcessing.cpp" />
     <ClCompile Include="FaceProcessing.cpp" />
     <ClCompile Include="main.cpp" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Constants.hpp" />
+    <ClInclude Include="CvUtils.hpp" />
     <ClInclude Include="EyeProcessing.hpp" />
     <ClInclude Include="FaceProcessing.hpp" />
     <ClInclude Include="PupilProcessing.hpp" />
