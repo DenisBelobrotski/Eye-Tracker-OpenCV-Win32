@@ -1,5 +1,6 @@
 #include "FaceProcessing.hpp"
 #include "CvUtils.hpp"
+#include "Utils.hpp"
 
 
 void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade, cv::Mat& sourceImage)
@@ -21,6 +22,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 		cv::imshow(faceWindowName, sourceImage);
 		cv::resizeWindow(faceWindowName, sourceImage.size() / 4);
 		windowNameStringStream.str("");
+
+		writeResult(faceWindowName, sourceImage);
 	}
 
 	// end original image
@@ -39,6 +42,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 		cv::imshow(faceWindowName, processingImage);
 		cv::resizeWindow(faceWindowName, processingImage.size() / 4);
 		windowNameStringStream.str("");
+
+		writeResult(faceWindowName, processingImage);
 	}
 
 	// end grayscale
@@ -57,6 +62,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 		cv::imshow(faceWindowName, processingImage);
 		cv::resizeWindow(faceWindowName, processingImage.size() / 4);
 		windowNameStringStream.str("");
+
+		writeResult(faceWindowName, processingImage);
 	}
 
 	// end histogram equalization
@@ -87,6 +94,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 			cv::imshow(faceWindowName, faceRoi);
 			cv::resizeWindow(faceWindowName, faceRect.size() / 2);
 			windowNameStringStream.str("");
+
+			writeResult(faceWindowName, faceRoi);
 		}
 
 		if (IS_DEBUG)
@@ -97,6 +106,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 			cv::imshow(faceWindowName, originalFaceRoi);
 			cv::resizeWindow(faceWindowName, faceRect.size() / 2);
 			windowNameStringStream.str("");
+
+			writeResult(faceWindowName, originalFaceRoi);
 		}
 
 		if (IS_DRAWING)
@@ -138,6 +149,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 				cv::imshow(windowName, eyeRoi);
 				cv::moveWindow(windowName, 200, 500 + eyeIndex * 50);
 				windowNameStringStream.str("");
+
+				writeResult(windowName, eyeRoi);
 			}
 
 			if (IS_DEBUG)
@@ -148,6 +161,8 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 				cv::imshow(windowName, originalEyeRoi);
 				cv::moveWindow(windowName, 300, 600 + eyeIndex * 50);
 				windowNameStringStream.str("");
+
+				writeResult(windowName, originalEyeRoi);
 			}
 
 			processEye(originalEyeRoi, eyeIndex);

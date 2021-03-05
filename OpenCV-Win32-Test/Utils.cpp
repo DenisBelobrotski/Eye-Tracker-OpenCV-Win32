@@ -90,3 +90,73 @@ cv::Mat readImageAsBinaryStream(const std::string& filePath)
 	std::vector<char> fileBuffer((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 	return cv::imdecode(cv::Mat(fileBuffer), cv::IMREAD_COLOR);
 }
+
+
+std::string getImageFileSavePath(const std::string& fileName)
+{
+	return RESULT_IMAGE_RELATIVE_PATH + "\\" + fileName + "." + RESULT_IMAGE_EXTENSION;
+}
+
+
+int outputGlobalCounter = 0;
+
+int getOutputGlobalCounter()
+{
+	return outputGlobalCounter++;
+}
+
+
+std::string getResultFilePath(const std::string& fileName)
+{
+	std::stringstream ss;
+	ss << getOutputGlobalCounter() << "---" << fileName;
+	return getImageFileSavePath(ss.str());
+}
+
+
+void writeResult(const std::string& fileName, cv::Mat& image)
+{
+	if (IS_VIDEO_MODE)
+	{
+		return;
+	}
+
+	if (!IS_RESULT_IMAGE_OUTPUT_ENABLED)
+	{
+		return;
+	}
+
+	std::string outputFilePath = getResultFilePath(fileName);
+	cv::imwrite(outputFilePath, image);
+}
+
+
+void checkResultsFolder()
+{
+	if (IS_VIDEO_MODE)
+	{
+		return;
+	}
+
+	if (!IS_RESULT_IMAGE_OUTPUT_ENABLED)
+	{
+		return;
+	}
+
+#if _WIN32
+	std::stringstream command;
+
+	command << "rmdir " << RESULT_IMAGE_RELATIVE_PATH << " /s /q";
+	system(command.str().c_str());
+	command.str("");
+
+	command << "mkdir " << RESULT_IMAGE_RELATIVE_PATH;
+	system(command.str().c_str());
+	command.str("");
+
+	system("rmdir EyeTrackingResults /s /q");
+	system("mkdir EyeTrackingResults");
+#else
+	throw std::runtime_error("checkResultsFolder() not implemented for this target");
+#endif
+}

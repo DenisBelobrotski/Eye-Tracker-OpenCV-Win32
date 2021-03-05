@@ -1,6 +1,7 @@
 #include "ScleraProcessing.hpp"
 #include "Constants.hpp"
 #include "CvUtils.hpp"
+#include "Utils.hpp"
 
 
 cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
@@ -15,11 +16,13 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
-		windowNameStringStream << "HSV: Sclera " << eyeIndex << " Hue channel";
+		windowNameStringStream << "Sclera " << eyeIndex << " Hue channel";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
+
+		writeResult(windowName, processingImage);
 
 		windowOffsetY += 100;
 	}
@@ -33,11 +36,13 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
-		windowNameStringStream << "HSV: Sclera " << eyeIndex << " threshold";
+		windowNameStringStream << "Sclera " << eyeIndex << " threshold";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
+
+		writeResult(windowName, processingImage);
 
 		windowOffsetY += 100;
 	}
@@ -54,11 +59,13 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 		if (IS_DEBUG)
 		{
-			windowNameStringStream << "HSV: Sclera " << eyeIndex << " erode";
+			windowNameStringStream << "Sclera " << eyeIndex << " erode";
 			windowName = windowNameStringStream.str();
 			cv::imshow(windowName, processingImage);
 			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 			windowNameStringStream.str("");
+
+			writeResult(windowName, processingImage);
 
 			windowOffsetY += 100;
 		}
@@ -75,11 +82,13 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 		if (IS_DEBUG)
 		{
-			windowNameStringStream << "HSV: Sclera " << eyeIndex << " dilate";
+			windowNameStringStream << "Sclera " << eyeIndex << " dilate";
 			windowName = windowNameStringStream.str();
 			cv::imshow(windowName, processingImage);
 			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 			windowNameStringStream.str("");
+
+			writeResult(windowName, processingImage);
 
 			windowOffsetY += 100;
 		}
@@ -114,11 +123,13 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 			cv::drawMarker(coloredImage, center, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, markerThickness, cv::LINE_8);
 		}
 
-		windowNameStringStream << "HSV: Sclera " << eyeIndex << " center";
+		windowNameStringStream << "Sclera " << eyeIndex << " center";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, coloredImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
+
+		writeResult(windowName, coloredImage);
 
 		windowOffsetY += 100;
 	}

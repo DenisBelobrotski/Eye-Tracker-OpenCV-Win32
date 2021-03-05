@@ -11,6 +11,8 @@ int main(int argc, const char** argv)
 {
 	try
 	{
+		checkResultsFolder();
+
 		std::string faceCascadePath = 
 			getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
 		std::string eyesCascadePath = 
@@ -84,7 +86,7 @@ void processCameraImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassifi
 void processTestFaceImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade)
 {
 	const std::string testImageFilePath = TEST_DATASET_NAME + "/" + TEST_IMAGE_NAME + "." + TEST_IMAGE_EXTENSION;
-	const std::string windowName = testImageFilePath;
+	const std::string windowName = TEST_DATASET_NAME + "-" + TEST_IMAGE_NAME;
 
 	//cv::Mat faceImage = readImage(testImageFilePath);
 	cv::Mat faceImage = readImageAsBinary(testImageFilePath);
@@ -102,6 +104,8 @@ void processTestFaceImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 	cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 	cv::resizeWindow(windowName, width, height);
 	cv::imshow(windowName, faceImage);
+
+	writeResult(windowName, faceImage);
 
 	cv::waitKey(0);
 }

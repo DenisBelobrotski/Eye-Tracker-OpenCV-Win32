@@ -1,5 +1,6 @@
 #include "EyeProcessing.hpp"
 #include "CvUtils.hpp"
+#include "Utils.hpp"
 
 
 void processEye(cv::Mat eyeRoi, int eyeIndex)
@@ -21,6 +22,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
+
+		writeResult(windowName, processingImage);
 
 		windowOffsetY += 100;
 	}
@@ -47,6 +50,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
 
+		writeResult(windowName, processingImage);
+
 		windowOffsetY += 100;
 	}
 	// end cutting top and bottom
@@ -62,6 +67,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
+
+		writeResult(windowName, processingImage);
 
 		windowOffsetY += 100;
 	}
@@ -89,6 +96,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
 
+		writeResult(windowName, hue);
+
 		windowOffsetY += 100;
 	}
 
@@ -100,6 +109,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
 
+		writeResult(windowName, saturation);
+
 		windowOffsetY += 100;
 	}
 
@@ -110,6 +121,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 		cv::imshow(windowName, value);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
 		windowNameStringStream.str("");
+
+		writeResult(windowName, value);
 
 		windowOffsetY += 100;
 	}
@@ -125,12 +138,12 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 
 	if (IS_DRAWING)
 	{
-		int markerSize = getMarkerSizeForMat(eyeRoi, 4);
-		int thickness = getLineThicknessForMat(eyeRoi, 100, 1);
+		int markerSize = getMarkerSizeForMat(eyeRoi, 20, 2);
+		int thickness = getLineThicknessForMat(eyeRoi, 30, 1);
 		int lineType = cv::LINE_8;
 		cv::Point roiCenter = getMatCenter(eyeRoi);
-		cv::drawMarker(eyeRoi, roiCenter, CV_RGB(255, 255, 0), cv::MARKER_CROSS, markerSize, thickness, lineType);
-		cv::drawMarker(eyeRoi, scleraCenter, CV_RGB(0, 255, 0), cv::MARKER_CROSS, markerSize, thickness, lineType);
-		cv::drawMarker(eyeRoi, pupilCenter, CV_RGB(255, 0, 0), cv::MARKER_CROSS, markerSize, thickness, lineType);
+		cv::drawMarker(eyeRoi, roiCenter, CV_RGB(255, 255, 0), cv::MARKER_DIAMOND, markerSize, thickness, lineType);
+		cv::drawMarker(eyeRoi, scleraCenter, CV_RGB(0, 255, 0), cv::MARKER_DIAMOND, markerSize, thickness, lineType);
+		cv::drawMarker(eyeRoi, pupilCenter, CV_RGB(255, 0, 0), cv::MARKER_DIAMOND, markerSize, thickness, lineType);
 	}
 }
