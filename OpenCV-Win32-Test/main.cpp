@@ -95,7 +95,7 @@ void processTestFaceImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 	float aspectRatio = imageWidth / imageHeight;
 
-	float width = 500.0f;
+	float width = DEBUG_RESULT_WINDOW_WIDTH;
 	float height = width / aspectRatio;
 
 	processFaceDetection(face_cascade, eyes_cascade, faceImage);
