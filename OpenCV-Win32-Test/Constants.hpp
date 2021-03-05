@@ -19,11 +19,26 @@ const bool IS_LOGGING = false;
 
 const int DEBUG_RESULT_WINDOW_WIDTH = 1000;
 
+const double FACE_SCALE_FACTOR = 1.3;
+const int FACE_MIN_NEIGHBOURS = 5;
+const int MIN_FACE_RELATIVE_SIZE = 20;
+const int MAX_FACE_RELATIVE_SIZE = 90;
+
+const double EYE_SCALE_FACTOR = 1.3;
+const int EYE_MIN_NEIGHBOURS = 5;
+const int MIN_EYE_RELATIVE_SIZE = 10;
+const int MAX_EYE_RELATIVE_SIZE = 60;
+
+const int EYE_CUT_TOP_OFFSET = 40;
+const int EYE_CUT_BOTTOM_OFFSET = 0;
+
 const int SCLERA_THRESHOLD = 30;
+const int SCLERA_MAX_THRESHOLD = 255;
 const bool IS_SCLERA_EROSION_ENABLED = true;
 const bool IS_SCLERA_DILATION_ENABLED = true;
 
 const bool IS_PUPIL_HISTOGRAM_EQUALIZATION_ENABLED = true;
 const int PUPIL_THRESHOLD = 10;
+const int PUPIL_MAX_THRESHOLD = 255;
 const bool IS_PUPIL_EROSION_ENABLED = true;
 const bool IS_PUPIL_DILATION_ENABLED = true;

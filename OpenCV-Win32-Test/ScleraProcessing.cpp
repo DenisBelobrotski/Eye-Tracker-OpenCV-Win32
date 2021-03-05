@@ -2,7 +2,7 @@
 #include "Constants.hpp"
 
 
-cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeIndex)
+cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 {
 	std::stringstream windowNameStringStream;
 	std::string windowName;
@@ -28,7 +28,7 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int threshold, int eyeI
 
 	// threshold
 
-	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY);
+	cv::threshold(processingImage, processingImage, SCLERA_THRESHOLD, SCLERA_MAX_THRESHOLD, cv::THRESH_BINARY);
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{

@@ -4,4 +4,4 @@
 #include <opencv2/imgproc.hpp>
 
 
-cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eyeIndex);
+cv::Point detectPupilCenterValue(cv::Mat processingImage, int eyeIndex);

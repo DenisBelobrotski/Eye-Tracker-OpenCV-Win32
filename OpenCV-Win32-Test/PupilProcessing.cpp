@@ -2,7 +2,7 @@
 #include "Constants.hpp"
 
 
-cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eyeIndex)
+cv::Point detectPupilCenterValue(cv::Mat processingImage, int eyeIndex)
 {
 	std::stringstream windowNameStringStream;
 	std::string windowName;
@@ -49,7 +49,7 @@ cv::Point detectPupilCenterValue(cv::Mat processingImage, int threshold, int eye
 
 	// threshold
 
-	cv::threshold(processingImage, processingImage, threshold, 255, cv::THRESH_BINARY_INV);
+	cv::threshold(processingImage, processingImage, PUPIL_THRESHOLD, PUPIL_MAX_THRESHOLD, cv::THRESH_BINARY_INV);
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{

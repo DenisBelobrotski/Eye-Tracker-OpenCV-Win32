@@ -28,10 +28,14 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 
 
 	// cut top and bottom
-	int topOffset = processingImage.rows * 2 / 5;
-	int bottomOffset = 0;
-	cv::Range rowsRange = cv::Range(topOffset, processingImage.rows - bottomOffset);
-	cv::Range colsRange = cv::Range(0, processingImage.cols);
+	int rowsCount = processingImage.rows;
+	int colsCount = processingImage.cols;
+
+	int topOffset = rowsCount * EYE_CUT_TOP_OFFSET / 100;
+	int bottomOffset = rowsCount * EYE_CUT_BOTTOM_OFFSET / 100;
+
+	cv::Range rowsRange = cv::Range(topOffset, rowsCount - bottomOffset);
+	cv::Range colsRange = cv::Range(0, colsCount);
 
 	processingImage = processingImage(rowsRange, colsRange);
 
@@ -49,7 +53,7 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 
 
 	// convert to HSV
-	cv::cvtColor(processingImage, processingImage, cv::COLOR_BGR2HSV, 1);
+	cv::cvtColor(processingImage, processingImage, cv::COLOR_BGR2HSV);
 
 	if (IS_DEBUG)
 	{
@@ -112,8 +116,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 
 	// end channels separation
 
-	cv::Point scleraCenter = detectScleraCenterHue(hue, SCLERA_THRESHOLD, eyeIndex);
-	cv::Point pupilCenter = detectPupilCenterValue(value, PUPIL_THRESHOLD, eyeIndex);
+	cv::Point scleraCenter = detectScleraCenterHue(hue, eyeIndex);
+	cv::Point pupilCenter = detectPupilCenterValue(value, eyeIndex);
 
 	scleraCenter.y += topOffset;
 	pupilCenter.y += topOffset;

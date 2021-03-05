@@ -61,8 +61,14 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 	// end histogram equalization
 
+
+	cv::Size imageSize = processingImage.size();
+	cv::Size minFaceSize = imageSize * MIN_FACE_RELATIVE_SIZE / 100;
+	cv::Size maxFaceSize = imageSize * MAX_FACE_RELATIVE_SIZE / 100;
+
 	std::vector<cv::Rect> faceRects;
-	face_cascade.detectMultiScale(processingImage, faceRects, 1.3, 5);
+	face_cascade.detectMultiScale(processingImage, faceRects, FACE_SCALE_FACTOR, FACE_MIN_NEIGHBOURS, 0, minFaceSize, maxFaceSize);
+
 	facesCount += faceRects.size();
 
 	std::stringstream windowNameStringStream;
@@ -72,12 +78,6 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 		cv::Rect faceRect = faceRects[faceIndex];
 		cv::Mat faceRoi = processingImage(faceRect);
 		cv::Mat originalFaceRoi = sourceImage(faceRect);
-
-		if (IS_DRAWING)
-		{
-			int thickness = getLineThicknessForMat(sourceImage, 200);
-			cv::rectangle(sourceImage, faceRect, CV_RGB(255, 0, 0), thickness);
-		}
 
 		if (IS_DEBUG)
 		{
@@ -89,16 +89,39 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 			windowNameStringStream.str("");
 		}
 
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "Face " << faceIndex << " colored";
+			std::string faceWindowName = windowNameStringStream.str();
+			cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+			cv::imshow(faceWindowName, originalFaceRoi);
+			cv::resizeWindow(faceWindowName, faceRect.size() / 2);
+			windowNameStringStream.str("");
+		}
+
+		if (IS_DRAWING)
+		{
+			int thickness = getLineThicknessForMat(sourceImage, 200);
+			cv::rectangle(sourceImage, faceRect, CV_RGB(255, 0, 0), thickness);
+		}
+
+		cv::Size faceSize = faceRect.size();
+		cv::Size minEyeSize = faceSize * MIN_EYE_RELATIVE_SIZE / 100;
+		cv::Size maxEyeSize = faceSize * MAX_EYE_RELATIVE_SIZE / 100;
+
 		std::vector<cv::Rect> eyeRects;
-		eyes_cascade.detectMultiScale(faceRoi, eyeRects, 1.3, 5);
+		eyes_cascade.detectMultiScale(faceRoi, eyeRects, EYE_SCALE_FACTOR, EYE_MIN_NEIGHBOURS, 0, minEyeSize, maxEyeSize);
 		eyesCount += eyeRects.size();
 
 		for (size_t eyeIndex = 0; eyeIndex < eyeRects.size(); eyeIndex++)
 		{
 			cv::Rect eyeRect = eyeRects[eyeIndex];
+
 			int eyeCenterX = eyeRect.x + eyeRect.width / 2;
 			int eyeCenterY = eyeRect.y + eyeRect.height / 2;
 
+			#pragma MARK - eye removing condition
+			// MARK: eye removing condition
 			if (eyeCenterY > faceRect.height / 2)
 			{
 				continue;
@@ -109,11 +132,21 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 			if (IS_DEBUG)
 			{
-				windowNameStringStream << "Eye " << eyeIndex << " cut grayscale";
+				windowNameStringStream << "Eye " << eyeIndex << " grayscale";
 				std::string windowName = windowNameStringStream.str();
 				cv::namedWindow(windowName, cv::WINDOW_NORMAL);
 				cv::imshow(windowName, eyeRoi);
 				cv::moveWindow(windowName, 200, 500 + eyeIndex * 50);
+				windowNameStringStream.str("");
+			}
+
+			if (IS_DEBUG)
+			{
+				windowNameStringStream << "Eye " << eyeIndex << " colored";
+				std::string windowName = windowNameStringStream.str();
+				cv::namedWindow(windowName, cv::WINDOW_NORMAL);
+				cv::imshow(windowName, originalEyeRoi);
+				cv::moveWindow(windowName, 300, 600 + eyeIndex * 50);
 				windowNameStringStream.str("");
 			}
 
