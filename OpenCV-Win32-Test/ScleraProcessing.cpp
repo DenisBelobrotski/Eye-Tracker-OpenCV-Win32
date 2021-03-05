@@ -89,6 +89,7 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 	// center of mass
 
+	// TODO: check incorrect result by (0, 0)
 	cv::Point center = getCenterOfMass8UC1(processingImage);
 
 	// end center of mass
