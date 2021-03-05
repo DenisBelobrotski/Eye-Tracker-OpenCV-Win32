@@ -178,6 +178,18 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 			// NOTE: compare skin and sclera color on colored image (especially R and B)
 			// NOTE: eye = sclera + pupil
 		}
+
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "Face " << faceIndex << " result";
+			std::string faceWindowName = windowNameStringStream.str();
+			cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
+			cv::imshow(faceWindowName, originalFaceRoi);
+			cv::resizeWindow(faceWindowName, faceRect.size() / 2);
+			windowNameStringStream.str("");
+
+			writeResult(faceWindowName, originalFaceRoi);
+		}
 	}
 
 	if (IS_LOGGING)
