@@ -181,7 +181,7 @@ void processFaceDetection(cv::CascadeClassifier& face_cascade, cv::CascadeClassi
 
 		if (IS_DEBUG)
 		{
-			windowNameStringStream << "Face " << faceIndex << " result";
+			windowNameStringStream << TEST_DATASET_NAME << "-" << TEST_IMAGE_NAME << " detection result";
 			std::string faceWindowName = windowNameStringStream.str();
 			cv::namedWindow(faceWindowName, cv::WINDOW_NORMAL);
 			cv::imshow(faceWindowName, originalFaceRoi);
