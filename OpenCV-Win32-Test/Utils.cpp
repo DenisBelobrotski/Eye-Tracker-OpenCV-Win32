@@ -121,7 +121,7 @@ void writeResult(const std::string& fileName, cv::Mat& image)
 		return;
 	}
 
-	if (!IS_RESULT_IMAGE_OUTPUT_ENABLED)
+	if (!IS_RESULT_IMAGE_WRITRE_ENABLED)
 	{
 		return;
 	}
@@ -138,7 +138,7 @@ void checkResultsFolder()
 		return;
 	}
 
-	if (!IS_RESULT_IMAGE_OUTPUT_ENABLED)
+	if (!IS_RESULT_IMAGE_WRITRE_ENABLED)
 	{
 		return;
 	}

@@ -13,7 +13,7 @@ const std::string TEST_IMAGE_EXTENSION = "jpg";
 
 const std::string RESULT_IMAGE_RELATIVE_PATH = "EyeTrackingResults";
 const std::string RESULT_IMAGE_EXTENSION = "png";
-const bool IS_RESULT_IMAGE_OUTPUT_ENABLED = false;
+const bool IS_RESULT_IMAGE_WRITRE_ENABLED = true;
 
 const bool IS_VIDEO_MODE = false;
 const bool IS_DEBUG_VIDEO_MODE = true;
