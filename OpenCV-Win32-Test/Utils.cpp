@@ -1,3 +1,4 @@
+#include <filesystem>
 #include "Utils.hpp"
 
 std::string getEnvironmentVariable(const std::string& variable)
@@ -143,20 +144,7 @@ void checkResultsFolder()
 		return;
 	}
 
-#if _WIN32
-	std::stringstream command;
-
-	command << "rmdir " << RESULT_IMAGE_RELATIVE_PATH << " /s /q";
-	system(command.str().c_str());
-	command.str("");
-
-	command << "mkdir " << RESULT_IMAGE_RELATIVE_PATH;
-	system(command.str().c_str());
-	command.str("");
-
-	system("rmdir EyeTrackingResults /s /q");
-	system("mkdir EyeTrackingResults");
-#else
-	throw std::runtime_error("checkResultsFolder() not implemented for this target platform");
-#endif
+	std::filesystem::path resultsPath = std::filesystem::current_path() / RESULT_IMAGE_RELATIVE_PATH;
+	std::filesystem::remove_all(resultsPath);
+	std::filesystem::create_directory(resultsPath);
 }
