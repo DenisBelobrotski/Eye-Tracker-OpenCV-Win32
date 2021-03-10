@@ -6,12 +6,58 @@
 void processCameraImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade);
 void processTestFaceImage(cv::CascadeClassifier& face_cascade, cv::CascadeClassifier& eyes_cascade);
 
+void saveMat(const std::string& fileName, cv::Mat& image)
+{
+	cv::imshow(fileName, image);
+	writeResult(fileName, image);
+}
 
 int main(int argc, const char** argv)
 {
 	try
 	{
 		checkResultsFolder();
+
+		cv::Mat testImage = cv::imread("test.png");
+		cv::Mat processingImage = cv::Mat();
+
+		// source
+		saveMat("bgr", testImage);
+
+		// hsv
+		cv::cvtColor(testImage, processingImage, cv::COLOR_BGR2HSV);
+
+		saveMat("hsv", processingImage);
+
+		// split
+		int rows = processingImage.rows;
+		int cols = processingImage.cols;
+
+		cv::Mat hue = cv::Mat(rows, cols, CV_8UC1);
+		cv::Mat saturation = cv::Mat(rows, cols, CV_8UC1);
+		cv::Mat value = cv::Mat(rows, cols, CV_8UC1);
+
+		std::vector<cv::Mat> separatedChannels = { hue, saturation, value };
+
+		cv::split(processingImage, separatedChannels);
+
+		saveMat("hue", hue);
+		saveMat("saturation", saturation);
+		saveMat("value", value);
+
+		// histogram equalization
+		//cv::equalizeHist(lightness, lightness);
+
+		//cv::imshow("histogram equalization", lightness);
+
+		// thresholding
+		//cv::threshold(value, value, 100, 255, cv::THRESH_BINARY);
+
+		//cv::imshow("thresholding", value);
+
+		cv::waitKey(0);
+
+		return 0;
 
 		std::string faceCascadePath = 
 			getEnvironmentVariable(OPENCV_ENVIRONMENT_VARIABLE_NAME) + HAAR_CASCADES_RELATIVE_PATH + "\\" + FACE_CASCADE_FILE_NAME;
