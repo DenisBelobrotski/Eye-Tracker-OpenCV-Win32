@@ -18,7 +18,7 @@ int main(int argc, const char** argv)
 	{
 		checkResultsFolder();
 
-		cv::Mat testImage = cv::imread("test.jpg");
+		cv::Mat testImage = cv::imread("test.png");
 		cv::Mat processingImage = cv::Mat();
 
 		// source
