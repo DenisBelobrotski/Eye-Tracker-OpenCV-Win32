@@ -2,6 +2,7 @@
 
 #include "Constants.hpp"
 #include "ScleraProcessing.hpp"
+#include "ScleraProcessingNew.hpp"
 #include "PupilProcessing.hpp"
 
 
