@@ -16,7 +16,7 @@ cv::Point detectScleraCenterSaturation(cv::Mat processingImage, int eyeIndex)
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
-		windowNameStringStream << "Sclera " << eyeIndex << " Hue channel";
+		windowNameStringStream << "Sclera " << eyeIndex << " Saturation channel";
 		windowName = windowNameStringStream.str();
 		cv::imshow(windowName, processingImage);
 		cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
@@ -30,9 +30,32 @@ cv::Point detectScleraCenterSaturation(cv::Mat processingImage, int eyeIndex)
 	// end original image
 
 
+	// equalize hist
+
+	if (IS_SATURATION_SCLERA_HISTOGRAM_EQUALIZATION_ENABLED)
+	{
+		cv::equalizeHist(processingImage, processingImage);
+
+		if (IS_DEBUG)
+		{
+			windowNameStringStream << "Sclera " << eyeIndex << " equlize hist";
+			windowName = windowNameStringStream.str();
+			cv::imshow(windowName, processingImage);
+			cv::moveWindow(windowName, windowOffsetX, windowOffsetY);
+			windowNameStringStream.str("");
+
+			writeResult(windowName, processingImage);
+
+			windowOffsetY += 100;
+		}
+	}
+
+	// end equalize hist
+
+
 	// threshold
 
-	cv::threshold(processingImage, processingImage, SCLERA_THRESHOLD, SCLERA_MAX_THRESHOLD, cv::THRESH_BINARY);
+	cv::threshold(processingImage, processingImage, SATURATION_SCLERA_THRESHOLD, SATURATION_SCLERA_MAX_THRESHOLD, cv::THRESH_BINARY_INV);
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
@@ -51,11 +74,11 @@ cv::Point detectScleraCenterSaturation(cv::Mat processingImage, int eyeIndex)
 
 
 	// start erode
-	if (IS_SCLERA_EROSION_ENABLED)
+	if (IS_SATURATION_SCLERA_EROSION_ENABLED)
 	{
 		const cv::Mat kernel = cv::Mat();
 		const cv::Point anchor = cv::Point(-1, -1);
-		cv::erode(processingImage, processingImage, kernel, anchor, SCLERA_EROSION_ITERATIONS_COUNT);
+		cv::erode(processingImage, processingImage, kernel, anchor, SATURATION_SCLERA_EROSION_ITERATIONS_COUNT);
 
 		if (IS_DEBUG)
 		{
@@ -74,11 +97,11 @@ cv::Point detectScleraCenterSaturation(cv::Mat processingImage, int eyeIndex)
 
 
 	// start dilate
-	if (IS_SCLERA_DILATION_ENABLED)
+	if (IS_SATURATION_SCLERA_DILATION_ENABLED)
 	{
 		const cv::Mat kernel = cv::Mat();
 		const cv::Point anchor = cv::Point(-1, -1);
-		cv::dilate(processingImage, processingImage, kernel, anchor, SCLERA_DILATION_ITERATIONS_COUNT);
+		cv::dilate(processingImage, processingImage, kernel, anchor, SATURATION_SCLERA_DILATION_ITERATIONS_COUNT);
 
 		if (IS_DEBUG)
 		{

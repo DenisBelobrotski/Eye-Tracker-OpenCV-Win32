@@ -129,7 +129,8 @@ void processEye(cv::Mat eyeRoi, int eyeIndex)
 
 	// end channels separation
 
-	cv::Point scleraCenter = detectScleraCenterHue(hue, eyeIndex);
+	//cv::Point scleraCenter = detectScleraCenterHue(hue, eyeIndex);
+	cv::Point scleraCenter = detectScleraCenterSaturation(saturation, eyeIndex);
 	cv::Point pupilCenter = detectPupilCenterValue(value, eyeIndex);
 
 	scleraCenter.y += topOffset;

@@ -32,7 +32,7 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 	// threshold
 
-	cv::threshold(processingImage, processingImage, SCLERA_THRESHOLD, SCLERA_MAX_THRESHOLD, cv::THRESH_BINARY);
+	cv::threshold(processingImage, processingImage, HUE_SCLERA_THRESHOLD, HUE_SCLERA_MAX_THRESHOLD, cv::THRESH_BINARY);
 
 	if (IS_DEBUG || (IS_VIDEO_MODE && IS_DEBUG_VIDEO_MODE))
 	{
@@ -51,11 +51,11 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 
 	// start erode
-	if (IS_SCLERA_EROSION_ENABLED)
+	if (IS_HUE_SCLERA_EROSION_ENABLED)
 	{
 		const cv::Mat kernel = cv::Mat();
 		const cv::Point anchor = cv::Point(-1, -1);
-		cv::erode(processingImage, processingImage, kernel, anchor, SCLERA_EROSION_ITERATIONS_COUNT);
+		cv::erode(processingImage, processingImage, kernel, anchor, HUE_SCLERA_EROSION_ITERATIONS_COUNT);
 
 		if (IS_DEBUG)
 		{
@@ -74,11 +74,11 @@ cv::Point detectScleraCenterHue(cv::Mat processingImage, int eyeIndex)
 
 
 	// start dilate
-	if (IS_SCLERA_DILATION_ENABLED)
+	if (IS_HUE_SCLERA_DILATION_ENABLED)
 	{
 		const cv::Mat kernel = cv::Mat();
 		const cv::Point anchor = cv::Point(-1, -1);
-		cv::dilate(processingImage, processingImage, kernel, anchor, SCLERA_DILATION_ITERATIONS_COUNT);
+		cv::dilate(processingImage, processingImage, kernel, anchor, HUE_SCLERA_DILATION_ITERATIONS_COUNT);
 
 		if (IS_DEBUG)
 		{
